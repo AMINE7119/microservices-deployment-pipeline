@@ -1,0 +1,203 @@
+name: ✨ Feature Request
+description: Suggest an idea or enhancement for the microservices deployment pipeline
+title: "[FEATURE]: "
+labels: ["enhancement", "needs-triage"]
+assignees: []
+
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting a new feature! Please provide as much detail as possible.
+
+  - type: checkboxes
+    id: prerequisites
+    attributes:
+      label: Pre-submission Checklist
+      description: Please confirm the following before submitting
+      options:
+        - label: I have searched existing issues to ensure this feature hasn't been requested
+          required: true
+        - label: I have reviewed the project roadmap and documentation
+          required: true
+        - label: This feature aligns with the project's goals and architecture
+          required: true
+
+  - type: dropdown
+    id: component
+    attributes:
+      label: Component
+      description: Which component would this feature affect?
+      options:
+        - Frontend (React/Vue)
+        - API Gateway (Node.js)
+        - User Service (Python)
+        - Product Service (Go)
+        - Order Service (Node.js)
+        - Kubernetes Infrastructure
+        - CI/CD Pipeline
+        - Monitoring & Observability
+        - Security Components
+        - Documentation
+        - Cross-cutting (Multiple components)
+        - New Component
+    validations:
+      required: true
+
+  - type: dropdown
+    id: feature-type
+    attributes:
+      label: Feature Type
+      description: What type of feature is this?
+      options:
+        - New functionality
+        - Performance improvement
+        - Developer experience enhancement
+        - Security enhancement
+        - Monitoring/Observability improvement
+        - Documentation improvement
+        - Tool/Automation addition
+        - Architecture improvement
+    validations:
+      required: true
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem Statement
+      description: What problem does this feature solve?
+      placeholder: |
+        Describe the problem you're facing or the gap you've identified.
+        - What is currently difficult or impossible?
+        - What inefficiencies exist?
+        - What user needs are not being met?
+    validations:
+      required: true
+
+  - type: textarea
+    id: solution
+    attributes:
+      label: Proposed Solution
+      description: Describe the solution you'd like to see implemented
+      placeholder: |
+        Provide a clear and detailed description of your proposed solution.
+        - How would this feature work?
+        - What would the user experience be?
+        - What components would be involved?
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternative Solutions
+      description: Describe alternatives you've considered
+      placeholder: |
+        - Other ways to solve this problem
+        - Existing tools or workarounds
+        - Why the proposed solution is better
+    validations:
+      required: false
+
+  - type: textarea
+    id: use-cases
+    attributes:
+      label: Use Cases
+      description: Provide specific use cases for this feature
+      placeholder: |
+        1. As a [user type], I want [goal] so that [benefit]
+        2. When [scenario], then [expected behavior]
+        3. If [condition], then [desired outcome]
+    validations:
+      required: true
+
+  - type: textarea
+    id: acceptance-criteria
+    attributes:
+      label: Acceptance Criteria
+      description: Define what "done" looks like for this feature
+      placeholder: |
+        - [ ] Feature requirement 1
+        - [ ] Feature requirement 2
+        - [ ] Performance requirement (if applicable)
+        - [ ] Security requirement (if applicable)
+        - [ ] Documentation updated
+        - [ ] Tests added
+    validations:
+      required: true
+
+  - type: dropdown
+    id: priority
+    attributes:
+      label: Priority
+      description: How important is this feature?
+      options:
+        - Critical (Blocking progress or major issue)
+        - High (Important for upcoming release)
+        - Medium (Would be nice to have)
+        - Low (Future consideration)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: complexity
+    attributes:
+      label: Estimated Complexity
+      description: How complex do you think this feature would be to implement?
+      options:
+        - Simple (Few hours of work)
+        - Medium (Few days of work)
+        - Complex (Few weeks of work)
+        - Very Complex (Significant architectural changes)
+        - Unknown (Need investigation)
+    validations:
+      required: true
+
+  - type: textarea
+    id: technical-considerations
+    attributes:
+      label: Technical Considerations
+      description: Any technical aspects to consider?
+      placeholder: |
+        - Breaking changes?
+        - Performance implications?
+        - Security considerations?
+        - Dependencies on other features?
+        - Migration requirements?
+        - Testing strategy?
+
+  - type: textarea
+    id: resources
+    attributes:
+      label: Supporting Resources
+      description: Any supporting materials, references, or examples?
+      placeholder: |
+        - Links to similar implementations
+        - Research or documentation
+        - Screenshots or mockups
+        - Code examples or pseudocode
+        - Industry standards or best practices
+
+  - type: checkboxes
+    id: contribution
+    attributes:
+      label: Contribution
+      description: Are you willing to help implement this feature?
+      options:
+        - label: I'd like to work on implementing this feature
+        - label: I can help with design and planning
+        - label: I can help with testing and validation
+        - label: I can help with documentation
+        - label: I need guidance on how to contribute
+
+  - type: textarea
+    id: additional-context
+    attributes:
+      label: Additional Context
+      description: Any other context or information?
+      placeholder: |
+        - Business justification
+        - Timeline constraints
+        - Related issues or features
+        - Community feedback
+        - Any other relevant information
