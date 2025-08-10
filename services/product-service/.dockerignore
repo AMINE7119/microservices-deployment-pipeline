@@ -1,0 +1,57 @@
+# Git files
+.git
+.gitignore
+.github
+
+# Documentation
+*.md
+README*
+LICENSE
+CHANGELOG*
+
+# Development files
+.env
+.env.*
+!.env.example
+*.log
+
+# Go build cache
+*.exe
+*.exe~
+*.dll
+*.so
+*.dylib
+*.test
+*.out
+
+# Testing
+*_test.go
+tests/
+coverage.txt
+coverage.html
+*.prof
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Security scanning
+gosec-report.json
+.scannerwork/
+
+# CI/CD
+.gitlab-ci.yml
+.travis.yml
+Jenkinsfile
+
+# Docker files
+Dockerfile*
+docker-compose*
+.dockerignore
+
+# Vendor (if not using modules)
+vendor/

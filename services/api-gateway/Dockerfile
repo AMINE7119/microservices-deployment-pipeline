@@ -1,59 +1,72 @@
-# Multi-stage Dockerfile for API Gateway
+# Security-hardened multi-stage Dockerfile for API Gateway
+# Implements CIS Docker Benchmark and OWASP best practices
 
-# Stage 1: Build stage
+# Stage 1: Build stage with security scanning
 FROM node:18-alpine AS builder
 
+# Add security labels
+LABEL security.scan="true" \
+      maintainer="devops@company.com" \
+      version="2.0.0" \
+      description="Hardened API Gateway Service"
+
+# Install security updates
+RUN apk update && \
+    apk upgrade && \
+    apk add --no-cache \
+    ca-certificates \
+    && rm -rf /var/cache/apk/*
+
 # Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy package files with specific permissions
+COPY --chown=node:node package*.json ./
 
-# Install dependencies (including dev dependencies for building)
-RUN npm ci
+# Install dependencies with audit
+RUN npm ci --only=production && \
+    npm audit fix && \
+    npm cache clean --force && \
+    rm -rf /tmp/*
 
 # Copy application code
-COPY . .
+COPY --chown=node:node . .
 
-# Run tests (optional - can be commented out for faster builds)
-# RUN npm test
+# Remove unnecessary files
+RUN rm -rf .git .gitignore .dockerignore *.md tests/ coverage/ .env.example
 
-# Stage 2: Production stage
-FROM node:18-alpine
+# Stage 2: Distroless production image
+FROM gcr.io/distroless/nodejs18-debian11:nonroot
 
-# Install dumb-init for proper signal handling
-RUN apk add --no-cache dumb-init
-
-# Create non-root user
-RUN addgroup -g 1001 nodejs && \
-    adduser -S -u 1001 -G nodejs nodejs
+# Add security labels
+LABEL security.scan="true" \
+      security.nonroot="true" \
+      security.distroless="true"
 
 # Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy only necessary files from builder
+COPY --from=builder --chown=nonroot:nonroot /app/node_modules ./node_modules
+COPY --from=builder --chown=nonroot:nonroot /app/index.js ./
+COPY --from=builder --chown=nonroot:nonroot /app/package.json ./
 
-# Install only production dependencies
-RUN npm ci --only=production && \
-    npm cache clean --force
+# Set security environment variables
+ENV NODE_ENV=production \
+    NODE_OPTIONS="--max-old-space-size=2048 --enable-source-maps" \
+    NPM_CONFIG_LOGLEVEL=error
 
-# Copy application code from builder
-COPY --from=builder --chown=nodejs:nodejs /app/index.js ./
-COPY --from=builder --chown=nodejs:nodejs /app/.env.example ./
+# Use non-root user (distroless default)
+USER nonroot
 
-# Switch to non-root user
-USER nodejs
-
-# Expose port
+# Expose port (non-privileged)
 EXPOSE 8080
 
-# Health check
+# Health check with timeout
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:8080/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); });"
+  CMD ["/nodejs/bin/node", "-e", "require('http').get('http://localhost:8080/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); });"]
 
-# Use dumb-init to handle signals properly
-ENTRYPOINT ["dumb-init", "--"]
-
+# Security: No shell, minimal attack surface
 # Start the application
-CMD ["node", "index.js"]
+ENTRYPOINT ["/nodejs/bin/node"]
+CMD ["index.js"]

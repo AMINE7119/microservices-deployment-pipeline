@@ -1,0 +1,127 @@
+# Trivy Security Scanner Configuration
+# https://aquasecurity.github.io/trivy/
+
+# Scanner configuration
+scan:
+  security-checks:
+    - vuln
+    - config
+    - secret
+    - license
+  
+  # Severity levels to detect
+  severity:
+    - CRITICAL
+    - HIGH
+    - MEDIUM
+    - LOW
+    - UNKNOWN
+
+# Vulnerability database settings
+db:
+  # Skip database update (useful in CI/CD)
+  skip-update: false
+  
+  # Database download retry
+  download-db-only: false
+  reset: false
+
+# Report settings
+report:
+  # Output format
+  format: table
+  
+  # Exit code when vulnerabilities are found
+  exit-code: 1
+  
+  # Exit on first error
+  exit-on-eol: true
+
+# Image scanning settings
+image:
+  # Remove image after scanning
+  removed-pkgs: true
+  
+  # Include non-OS packages
+  list-all-pkgs: true
+  
+  # Scan image layers
+  scanners:
+    - vuln
+    - secret
+    - config
+
+# Ignore policies
+ignore:
+  # Ignore unfixed vulnerabilities
+  unfixed: false
+  
+  # Vulnerability IDs to ignore
+  vulnerability-ids: []
+    # - CVE-2021-12345
+  
+  # Ignore vulnerabilities by severity
+  severity: []
+    # - LOW
+
+# Secret scanning
+secret:
+  # Enable secret scanning
+  enabled: true
+  
+  # Secret scanning rules
+  config: /security/secret-scanner.yaml
+
+# License scanning
+license:
+  # Full license scan
+  full: true
+  
+  # Confidence level
+  confidence-level: 0.9
+  
+  # Forbidden licenses
+  forbidden:
+    - GPL-2.0
+    - GPL-3.0
+    - AGPL-3.0
+
+# Misconfiguration scanning
+misconfig:
+  # Include non-failures
+  include-non-failures: false
+  
+  # Helm values files
+  helm-values: []
+  
+  # Terraform variables
+  tf-vars: []
+
+# Cache settings
+cache:
+  # Cache directory
+  dir: /tmp/trivy-cache
+  
+  # Cache backend
+  backend: fs
+  
+  # TTL for cache entries
+  ttl: 24h
+
+# Timeout settings
+timeout: 10m
+
+# Quiet mode
+quiet: false
+
+# Debug mode
+debug: false
+
+# Skip files
+skip-files: []
+
+# Skip directories
+skip-dirs:
+  - node_modules
+  - vendor
+  - .git

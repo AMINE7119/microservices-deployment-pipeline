@@ -1,0 +1,190 @@
+# Semgrep Security Configuration
+# Static Application Security Testing (SAST)
+
+rules:
+  # Security rules for all languages
+  - id: hardcoded-secrets
+    pattern-either:
+      - pattern: |
+          $KEY = "..."
+      - pattern: |
+          password = "..."
+      - pattern: |
+          api_key = "..."
+      - pattern: |
+          secret = "..."
+    message: "Potential hardcoded secret found"
+    languages: [python, javascript, go, typescript]
+    severity: ERROR
+
+  # SQL Injection Prevention
+  - id: sql-injection
+    patterns:
+      - pattern-either:
+          - pattern: |
+              $QUERY = "SELECT * FROM users WHERE id = " + $INPUT
+          - pattern: |
+              f"SELECT * FROM {$TABLE}"
+          - pattern: |
+              `SELECT * FROM users WHERE id = ${$INPUT}`
+    message: "Potential SQL injection vulnerability"
+    languages: [python, javascript, typescript]
+    severity: ERROR
+
+  # Command Injection Prevention
+  - id: command-injection
+    patterns:
+      - pattern-either:
+          - pattern: os.system(...)
+          - pattern: subprocess.call(...)
+          - pattern: eval(...)
+          - pattern: exec(...)
+    message: "Potential command injection vulnerability"
+    languages: [python, javascript]
+    severity: ERROR
+
+  # XSS Prevention
+  - id: xss-vulnerability
+    patterns:
+      - pattern-either:
+          - pattern: |
+              res.send($USER_INPUT)
+          - pattern: |
+              innerHTML = $USER_INPUT
+          - pattern: |
+              document.write($USER_INPUT)
+    message: "Potential XSS vulnerability"
+    languages: [javascript, typescript]
+    severity: WARNING
+
+  # Insecure Random
+  - id: insecure-random
+    patterns:
+      - pattern-either:
+          - pattern: Math.random()
+          - pattern: random.random()
+    message: "Use cryptographically secure random number generator"
+    languages: [javascript, python]
+    severity: WARNING
+
+  # Python specific rules
+  - id: python-assert-used
+    pattern: assert $X
+    message: "Assert statements are removed in production, use proper validation"
+    languages: [python]
+    severity: WARNING
+
+  # Python pickle deserialization
+  - id: python-pickle-insecure
+    patterns:
+      - pattern-either:
+          - pattern: pickle.loads(...)
+          - pattern: pickle.load(...)
+    message: "Pickle deserialization can execute arbitrary code"
+    languages: [python]
+    severity: ERROR
+
+  # Node.js specific rules
+  - id: nodejs-path-traversal
+    patterns:
+      - pattern-either:
+          - pattern: |
+              fs.readFile($USER_INPUT, ...)
+          - pattern: |
+              fs.readFileSync($USER_INPUT)
+    message: "Potential path traversal vulnerability"
+    languages: [javascript, typescript]
+    severity: ERROR
+
+  # Go specific rules
+  - id: go-sql-string-concat
+    patterns:
+      - pattern: |
+          "SELECT * FROM " + $TABLE
+    message: "SQL query built with string concatenation"
+    languages: [go]
+    severity: ERROR
+
+  # Docker security rules
+  - id: docker-no-root-user
+    patterns:
+      - pattern: USER root
+    message: "Container should not run as root user"
+    languages: [dockerfile]
+    severity: ERROR
+
+  - id: docker-no-sudo
+    patterns:
+      - pattern: RUN sudo $CMD
+    message: "Avoid using sudo in Dockerfile"
+    languages: [dockerfile]
+    severity: WARNING
+
+  # CORS Security
+  - id: cors-permissive
+    patterns:
+      - pattern: |
+          Access-Control-Allow-Origin: "*"
+    message: "Overly permissive CORS configuration"
+    languages: [javascript, typescript]
+    severity: WARNING
+
+  # JWT Security
+  - id: jwt-weak-secret
+    patterns:
+      - pattern-either:
+          - pattern: |
+              jwt.sign($PAYLOAD, "secret")
+          - pattern: |
+              jwt.sign($PAYLOAD, "123456")
+    message: "Weak JWT secret detected"
+    languages: [javascript, typescript]
+    severity: ERROR
+
+  # Environment Variables
+  - id: env-var-leak
+    patterns:
+      - pattern: console.log(process.env)
+    message: "Logging entire environment variables can leak secrets"
+    languages: [javascript, typescript]
+    severity: WARNING
+
+# Test rules - only run on test files
+test_rules:
+  - id: test-skip-detection
+    pattern: it.skip(...)
+    message: "Skipped test detected"
+    languages: [javascript, typescript]
+    severity: INFO
+    paths:
+      include:
+        - "*.test.js"
+        - "*.spec.js"
+        - "*.test.ts"
+        - "*.spec.ts"
+
+# Auto fixes
+auto_fix:
+  enabled: true
+  
+# Paths to scan
+paths:
+  include:
+    - services/
+  exclude:
+    - node_modules/
+    - vendor/
+    - .git/
+    - build/
+    - dist/
+    - coverage/
+
+# Output settings
+output:
+  format: sarif
+  file: semgrep-report.sarif
+
+# Performance settings
+performance:
+  max_memory: 2048
+  timeout: 300

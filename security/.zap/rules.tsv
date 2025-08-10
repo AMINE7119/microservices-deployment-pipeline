@@ -1,0 +1,79 @@
+# OWASP ZAP Rules Configuration
+# Format: Rule_ID	Rule_Name	Threshold	Strength	Enabled
+# Threshold: OFF, LOW, MEDIUM, HIGH
+# Strength: OFF, LOW, MEDIUM, HIGH, INSANE
+
+# Injection Rules
+40018	SQL Injection	LOW	HIGH	TRUE
+40019	SQL Injection (MySQL)	LOW	HIGH	TRUE
+40020	SQL Injection (Oracle)	LOW	HIGH	TRUE
+40021	SQL Injection (PostgreSQL)	LOW	HIGH	TRUE
+90018	Remote OS Command Injection	LOW	HIGH	TRUE
+90019	Server Side Include	LOW	HIGH	TRUE
+90020	Remote File Inclusion	LOW	HIGH	TRUE
+
+# XSS Rules
+40012	Cross Site Scripting (Reflected)	LOW	HIGH	TRUE
+40014	Cross Site Scripting (Persistent)	LOW	HIGH	TRUE
+40016	Cross Site Scripting (DOM Based)	LOW	HIGH	TRUE
+40017	Cross Site Scripting (Persistent) - Server Side	LOW	HIGH	TRUE
+
+# Authentication Rules
+10011	Cookie Without Secure Flag	LOW	MEDIUM	TRUE
+10015	Cookie Without HttpOnly Flag	LOW	MEDIUM	TRUE
+10016	Web Browser XSS Protection Not Enabled	LOW	MEDIUM	TRUE
+10017	Cross-Domain JavaScript Source File Inclusion	LOW	MEDIUM	TRUE
+10019	Content-Type Header Missing	LOW	MEDIUM	TRUE
+10020	X-Frame-Options Header Missing	LOW	MEDIUM	TRUE
+10021	X-Content-Type-Options Header Missing	LOW	MEDIUM	TRUE
+10023	Information Disclosure - Debug Error Messages	LOW	MEDIUM	TRUE
+10024	Information Disclosure - Sensitive Information in URL	LOW	MEDIUM	TRUE
+10025	Information Disclosure - Sensitive Information in HTTP Referrer Header	LOW	MEDIUM	TRUE
+10027	Information Disclosure - Suspicious Comments	LOW	MEDIUM	TRUE
+
+# Session Management
+10010	Cookie No HttpOnly Flag	LOW	MEDIUM	TRUE
+10054	Cookie Without SameSite Attribute	LOW	MEDIUM	TRUE
+10055	CSP Scanner	LOW	MEDIUM	TRUE
+10056	X-Debug-Token Information Leak	LOW	MEDIUM	TRUE
+10061	X-AspNet-Version Response Header Scanner	LOW	MEDIUM	TRUE
+10062	PII Scanner	LOW	MEDIUM	TRUE
+
+# CSRF Rules
+40013	Session Fixation	LOW	HIGH	TRUE
+40014	Cross Site Request Forgery	LOW	HIGH	TRUE
+
+# Path Traversal
+6	Path Traversal	LOW	HIGH	TRUE
+
+# LDAP Injection
+40015	LDAP Injection	LOW	HIGH	TRUE
+
+# XXE
+90023	XML External Entity Attack	LOW	HIGH	TRUE
+
+# Security Headers
+10035	Strict-Transport-Security Header Not Set	LOW	MEDIUM	TRUE
+10036	Server Leaks Version Information	LOW	MEDIUM	TRUE
+10037	Server Leaks Information	LOW	MEDIUM	TRUE
+10038	Content Security Policy (CSP) Header Not Set	LOW	MEDIUM	TRUE
+
+# Crypto Issues
+90011	Weak Authentication Method	LOW	HIGH	TRUE
+90022	Application Error Disclosure	LOW	MEDIUM	TRUE
+
+# Business Logic
+10043	User Controllable HTML Element Attribute	LOW	MEDIUM	TRUE
+10044	Big Redirect Detected	LOW	MEDIUM	TRUE
+10045	Source Code Disclosure	LOW	HIGH	TRUE
+
+# API Security
+10048	API Request Without Authentication	LOW	HIGH	TRUE
+10049	Storable and Cacheable Content	LOW	MEDIUM	TRUE
+10050	Retrieved from Cache	LOW	MEDIUM	TRUE
+
+# False Positive Reduction
+# These rules often generate false positives, adjust as needed
+10096	Timestamp Disclosure	OFF	LOW	FALSE
+10109	Modern Web Application	OFF	LOW	FALSE
+10202	Absence of Anti-CSRF Tokens	MEDIUM	MEDIUM	TRUE
