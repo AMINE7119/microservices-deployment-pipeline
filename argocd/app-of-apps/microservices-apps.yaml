@@ -1,0 +1,23 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: microservices-apps
+  namespace: argocd
+  labels:
+    app.kubernetes.io/name: app-of-apps
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/AMINE7119/microservices-deployment-pipeline
+    targetRevision: HEAD
+    path: argocd/applications
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: argocd
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+  revisionHistoryLimit: 10
