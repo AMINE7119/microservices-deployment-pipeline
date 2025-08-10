@@ -24,7 +24,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME_PREFIX: ${{ github.repository_owner }}/microservices-pipeline
+  IMAGE_NAME_PREFIX: amine7119/microservices-pipeline
 
 permissions:
   contents: read
@@ -79,7 +79,7 @@ jobs:
       id: meta
       uses: docker/metadata-action@v5
       with:
-        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}-${{ matrix.service }}
+        images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/${{ matrix.service }}
         tags: |
           type=ref,event=branch
           type=ref,event=pr
@@ -112,7 +112,7 @@ jobs:
     - name: Run Trivy vulnerability scanner
       uses: aquasecurity/trivy-action@master
       with:
-        image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}-${{ matrix.service }}:${{ github.sha }}
+        image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/${{ matrix.service }}:${{ github.sha }}
         format: 'sarif'
         output: 'trivy-${{ matrix.service }}.sarif'
         severity: 'CRITICAL,HIGH,MEDIUM'
@@ -126,7 +126,7 @@ jobs:
     - name: Generate image summary
       run: |
         echo "## 🐳 Container Image Built: ${{ matrix.service }}" >> $GITHUB_STEP_SUMMARY
-        echo "**Registry**: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}-${{ matrix.service }}" >> $GITHUB_STEP_SUMMARY
+        echo "**Registry**: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/${{ matrix.service }}" >> $GITHUB_STEP_SUMMARY
         echo "**Tags**: ${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
         echo "**Platforms**: linux/amd64, linux/arm64" >> $GITHUB_STEP_SUMMARY
         echo "**Build Date**: $(date)" >> $GITHUB_STEP_SUMMARY
@@ -174,7 +174,7 @@ jobs:
 
         # Update base deployment files with registry path
         for service in frontend api-gateway user-service product-service order-service; do
-          sed -i "s|image: ghcr.io/microservices-pipeline/$service:latest|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}-$service:$TAG|g" kubernetes/base/$service/deployment.yaml
+          sed -i "s|image: ghcr.io/microservices-pipeline/$service:latest|image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/$service:$TAG|g" kubernetes/base/$service/deployment.yaml
         done
 
     - name: Commit manifest updates
@@ -203,6 +203,6 @@ jobs:
     - name: Notify build success
       run: |
         echo "✅ All container images built successfully!"
-        echo "🚀 Images available at: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}-*"
+        echo "🚀 Images available at: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME_PREFIX }}/*"
         echo "📦 Total services built: 5"
         echo "🏷️ Tag: ${{ github.ref == 'refs/heads/main' && 'stable' || 'dev-latest' }}"
