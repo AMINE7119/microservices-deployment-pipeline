@@ -1,0 +1,45 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+
+namespace: microservices
+
+resources:
+- ../../base/api-gateway
+- ../../base/user-service
+- ../../base/product-service
+- ../../base/order-service
+- ../../base/frontend
+- ../../infrastructure/namespaces
+- ../../infrastructure/rbac
+- ../../infrastructure/network-policies
+
+commonLabels:
+  environment: production
+  managed-by: argocd
+
+images:
+- name: ghcr.io/microservices-pipeline/api-gateway
+  newTag: stable
+- name: ghcr.io/microservices-pipeline/user-service
+  newTag: stable
+- name: ghcr.io/microservices-pipeline/product-service
+  newTag: stable
+- name: ghcr.io/microservices-pipeline/order-service
+  newTag: stable
+- name: ghcr.io/microservices-pipeline/frontend
+  newTag: stable
+
+replicas:
+- name: api-gateway
+  count: 3
+- name: user-service
+  count: 3
+- name: product-service
+  count: 3
+- name: order-service
+  count: 3
+- name: frontend
+  count: 2
+
+patchesStrategicMerge:
+- production-resources.yaml

@@ -1,7 +1,10 @@
 {
   "permissions": {
     "allow": [
-      "Bash(mkdir:*)"
+      "Bash(mkdir:*)",
+      "Bash(minikube start:*)",
+      "Bash(kubectl:*)",
+      "Bash(kubectl get:*)"
     ],
     "deny": []
   }

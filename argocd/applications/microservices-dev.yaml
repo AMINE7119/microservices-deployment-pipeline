@@ -1,0 +1,53 @@
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: microservices-dev
+  namespace: argocd
+  labels:
+    environment: development
+    app.kubernetes.io/name: microservices
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/AMINE7119/microservices-deployment-pipeline
+    targetRevision: HEAD
+    path: kubernetes/base
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: microservices-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+    - PrunePropagationPolicy=foreground
+    - PruneLast=true
+  revisionHistoryLimit: 10
+---
+apiVersion: argoproj.io/v1alpha1
+kind: Application
+metadata:
+  name: microservices-infrastructure
+  namespace: argocd
+  labels:
+    component: infrastructure
+    app.kubernetes.io/name: microservices
+spec:
+  project: default
+  source:
+    repoURL: https://github.com/AMINE7119/microservices-deployment-pipeline
+    targetRevision: HEAD
+    path: kubernetes/infrastructure
+  destination:
+    server: https://kubernetes.default.svc
+    namespace: microservices-dev
+  syncPolicy:
+    automated:
+      prune: true
+      selfHeal: true
+    syncOptions:
+    - CreateNamespace=true
+    - PrunePropagationPolicy=foreground
+    - PruneLast=true
+  revisionHistoryLimit: 10
