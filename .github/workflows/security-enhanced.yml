@@ -123,7 +123,7 @@ jobs:
       
       # Grype scan
       - name: Run Grype vulnerability scanner
-        uses: anchore/scan-action@v3
+        uses: anchore/scan-action@v6
         id: grype
         with:
           image: '${{ matrix.service }}:security-scan'
