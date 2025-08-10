@@ -1,0 +1,262 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: mongodb
+  namespace: microservices-dev
+  labels:
+    app: mongodb
+    tier: database
+spec:
+  ports:
+  - port: 27017
+    name: mongodb
+  clusterIP: None
+  selector:
+    app: mongodb
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: mongodb
+  namespace: microservices-dev
+  labels:
+    app: mongodb
+    tier: database
+spec:
+  serviceName: mongodb
+  replicas: 1
+  selector:
+    matchLabels:
+      app: mongodb
+  template:
+    metadata:
+      labels:
+        app: mongodb
+        tier: database
+    spec:
+      securityContext:
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+      containers:
+      - name: mongodb
+        image: mongo:7.0
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: username
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: mongodb-secret
+              key: password
+        - name: MONGO_INITDB_DATABASE
+          value: "products"
+        ports:
+        - containerPort: 27017
+          name: mongodb
+        volumeMounts:
+        - name: mongodb-storage
+          mountPath: /data/db
+        - name: mongodb-config
+          mountPath: /etc/mongo/mongod.conf
+          subPath: mongod.conf
+        - name: mongodb-init
+          mountPath: /docker-entrypoint-initdb.d
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          exec:
+            command:
+            - mongo
+            - --eval
+            - "db.adminCommand('ping')"
+          initialDelaySeconds: 30
+          periodSeconds: 10
+          timeoutSeconds: 5
+        readinessProbe:
+          exec:
+            command:
+            - mongo
+            - --eval
+            - "db.adminCommand('ping')"
+          initialDelaySeconds: 5
+          periodSeconds: 5
+          timeoutSeconds: 3
+        command:
+        - mongod
+        - --config
+        - /etc/mongo/mongod.conf
+      volumes:
+      - name: mongodb-config
+        configMap:
+          name: mongodb-config
+      - name: mongodb-init
+        configMap:
+          name: mongodb-init
+  volumeClaimTemplates:
+  - metadata:
+      name: mongodb-storage
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 10Gi
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: mongodb-secret
+  namespace: microservices-dev
+type: Opaque
+data:
+  username: bW9uZ29hZG1pbg==  # mongoadmin
+  password: c2VjdXJlTW9uZ29QYXNzd29yZDEyMw==  # secureMongoPassword123
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mongodb-config
+  namespace: microservices-dev
+data:
+  mongod.conf: |
+    # MongoDB configuration for microservices
+    net:
+      port: 27017
+      bindIp: 0.0.0.0
+    
+    storage:
+      dbPath: /data/db
+      journal:
+        enabled: true
+    
+    systemLog:
+      destination: file
+      logAppend: true
+      path: /data/db/mongod.log
+      logRotate: reopen
+    
+    processManagement:
+      fork: false
+      pidFilePath: /data/db/mongod.pid
+    
+    security:
+      authorization: enabled
+    
+    operationProfiling:
+      slowOpThresholdMs: 100
+      mode: slowOp
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: mongodb-init
+  namespace: microservices-dev
+data:
+  01-init-products.js: |
+    // Switch to products database
+    db = db.getSiblingDB('products');
+    
+    // Create productservice user
+    db.createUser({
+      user: 'productservice',
+      pwd: 'productpass123',
+      roles: [
+        {
+          role: 'readWrite',
+          db: 'products'
+        }
+      ]
+    });
+    
+    // Create products collection with sample data
+    db.products.insertMany([
+      {
+        _id: ObjectId(),
+        name: "Wireless Headphones",
+        description: "Premium wireless headphones with noise cancellation",
+        price: 199.99,
+        category: "electronics",
+        brand: "TechBrand",
+        stock: 50,
+        rating: 4.5,
+        reviews: 128,
+        tags: ["wireless", "headphones", "noise-cancelling"],
+        images: [
+          "https://example.com/images/headphones1.jpg",
+          "https://example.com/images/headphones2.jpg"
+        ],
+        specifications: {
+          color: "Black",
+          weight: "250g",
+          batteryLife: "30 hours",
+          connectivity: "Bluetooth 5.0"
+        },
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        _id: ObjectId(),
+        name: "Smart Phone",
+        description: "Latest smartphone with advanced camera system",
+        price: 899.99,
+        category: "electronics",
+        brand: "PhoneCorp",
+        stock: 25,
+        rating: 4.7,
+        reviews: 342,
+        tags: ["smartphone", "camera", "5G"],
+        images: [
+          "https://example.com/images/phone1.jpg",
+          "https://example.com/images/phone2.jpg"
+        ],
+        specifications: {
+          color: "Silver",
+          storage: "256GB",
+          ram: "8GB",
+          display: "6.1 inch OLED"
+        },
+        createdAt: new Date(),
+        updatedAt: new Date()
+      },
+      {
+        _id: ObjectId(),
+        name: "Laptop Backpack",
+        description: "Durable laptop backpack with multiple compartments",
+        price: 79.99,
+        category: "accessories",
+        brand: "BagMaker",
+        stock: 100,
+        rating: 4.3,
+        reviews: 89,
+        tags: ["backpack", "laptop", "travel"],
+        images: [
+          "https://example.com/images/backpack1.jpg"
+        ],
+        specifications: {
+          color: "Navy Blue",
+          material: "Water-resistant nylon",
+          capacity: "25L",
+          laptopSize: "Up to 15.6 inch"
+        },
+        createdAt: new Date(),
+        updatedAt: new Date()
+      }
+    ]);
+    
+    // Create indexes for better performance
+    db.products.createIndex({ "name": "text", "description": "text" });
+    db.products.createIndex({ "category": 1 });
+    db.products.createIndex({ "brand": 1 });
+    db.products.createIndex({ "price": 1 });
+    db.products.createIndex({ "rating": -1 });
+    db.products.createIndex({ "createdAt": -1 });
+    
+    print("Products database initialized with sample data and indexes");

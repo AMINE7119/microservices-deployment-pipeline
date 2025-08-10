@@ -1,0 +1,191 @@
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq
+  namespace: microservices-dev
+  labels:
+    app: rabbitmq
+    tier: messaging
+spec:
+  ports:
+  - port: 5672
+    name: amqp
+  - port: 15672
+    name: management
+  selector:
+    app: rabbitmq
+  type: ClusterIP
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rabbitmq
+  namespace: microservices-dev
+  labels:
+    app: rabbitmq
+    tier: messaging
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rabbitmq
+  template:
+    metadata:
+      labels:
+        app: rabbitmq
+        tier: messaging
+    spec:
+      securityContext:
+        runAsUser: 999
+        runAsGroup: 999
+        fsGroup: 999
+      containers:
+      - name: rabbitmq
+        image: rabbitmq:3-management-alpine
+        ports:
+        - containerPort: 5672
+          name: amqp
+        - containerPort: 15672
+          name: management
+        env:
+        - name: RABBITMQ_DEFAULT_USER
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-secret
+              key: username
+        - name: RABBITMQ_DEFAULT_PASS
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-secret
+              key: password
+        - name: RABBITMQ_ERLANG_COOKIE
+          valueFrom:
+            secretKeyRef:
+              name: rabbitmq-secret
+              key: erlang-cookie
+        volumeMounts:
+        - name: rabbitmq-config
+          mountPath: /etc/rabbitmq/rabbitmq.conf
+          subPath: rabbitmq.conf
+        - name: rabbitmq-enabled-plugins
+          mountPath: /etc/rabbitmq/enabled_plugins
+          subPath: enabled_plugins
+        - name: rabbitmq-data
+          mountPath: /var/lib/rabbitmq
+        resources:
+          requests:
+            memory: "256Mi"
+            cpu: "200m"
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+        livenessProbe:
+          exec:
+            command:
+            - rabbitmq-diagnostics
+            - status
+          initialDelaySeconds: 60
+          periodSeconds: 60
+          timeoutSeconds: 15
+        readinessProbe:
+          exec:
+            command:
+            - rabbitmq-diagnostics
+            - ping
+          initialDelaySeconds: 20
+          periodSeconds: 60
+          timeoutSeconds: 10
+      volumes:
+      - name: rabbitmq-config
+        configMap:
+          name: rabbitmq-config
+      - name: rabbitmq-enabled-plugins
+        configMap:
+          name: rabbitmq-config
+      - name: rabbitmq-data
+        emptyDir: {}
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: rabbitmq-secret
+  namespace: microservices-dev
+type: Opaque
+data:
+  username: cmFiYml0dXNlcg==  # rabbituser
+  password: c2VjdXJlUmFiYml0UGFzc3dvcmQxMjM=  # secureRabbitPassword123
+  erlang-cookie: c2VjdXJlRXJsYW5nQ29va2llMTIz  # secureErlangCookie123
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rabbitmq-config
+  namespace: microservices-dev
+data:
+  rabbitmq.conf: |
+    # RabbitMQ configuration for microservices
+    
+    ## Networking
+    listeners.tcp.default = 5672
+    management.tcp.port = 15672
+    
+    ## Memory
+    vm_memory_high_watermark.relative = 0.6
+    
+    ## Disk
+    disk_free_limit.absolute = 2GB
+    
+    ## Clustering
+    cluster_formation.peer_discovery_backend = classic_config
+    
+    ## Security
+    default_user = ${RABBITMQ_DEFAULT_USER}
+    default_pass = ${RABBITMQ_DEFAULT_PASS}
+    
+    ## Logging
+    log.console = true
+    log.console.level = info
+    log.file = false
+    
+    ## Management plugin
+    management.rates_mode = basic
+    
+    ## Queue and Message TTL
+    default_user_tags.administrator = true
+    
+    ## Virtual hosts
+    default_vhost = /
+    
+    ## Performance
+    channel_max = 1024
+    connection_max = 1024
+    heartbeat = 60
+    
+    ## Queue settings
+    queue_master_locator = min-masters
+    
+  enabled_plugins: |
+    [rabbitmq_management,
+     rabbitmq_prometheus,
+     rabbitmq_shovel,
+     rabbitmq_shovel_management].
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: rabbitmq-management
+  namespace: microservices-dev
+  labels:
+    app: rabbitmq
+    component: management
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "15672"
+spec:
+  type: ClusterIP
+  ports:
+  - port: 15672
+    targetPort: 15672
+    name: management
+  selector:
+    app: rabbitmq
