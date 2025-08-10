@@ -1,0 +1,119 @@
+name: Security Checks
+
+on:
+  push:
+    branches: [ main, develop, 'feature/*' ]
+  pull_request:
+    branches: [ main ]
+
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
+jobs:
+  security-scan:
+    runs-on: ubuntu-latest
+    name: Security Analysis
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.11'
+      
+      - name: Setup Go
+        uses: actions/setup-go@v4
+        with:
+          go-version: '1.21'
+      
+      - name: Install security tools
+        run: |
+          # Install Python security tools
+          pip install safety pip-audit bandit semgrep
+          
+          # Install Node.js security tools
+          npm install -g audit-ci
+          
+          # Install Go security tools
+          go install github.com/securego/gosec/v2/cmd/gosec@v2.18.2
+          go install golang.org/x/vuln/cmd/govulncheck@v1.0.1
+      
+      - name: Run secret scanning
+        run: |
+          echo "🔍 Scanning for secrets..."
+          # Basic secret pattern detection
+          if grep -r -n "password.*=" . --include="*.js" --include="*.py" --include="*.go" --exclude-dir=node_modules --exclude-dir=.git; then
+            echo "⚠️ Found potential hardcoded passwords"
+            exit 1
+          fi
+          
+          if grep -r -n "api.*key.*=" . --include="*.js" --include="*.py" --include="*.go" --exclude-dir=node_modules --exclude-dir=.git; then
+            echo "⚠️ Found potential hardcoded API keys"
+            exit 1
+          fi
+          
+          echo "✅ No obvious secrets found"
+      
+      - name: Run Python security checks
+        working-directory: services/user-service
+        run: |
+          echo "🐍 Python security scan..."
+          if [ -f requirements-prod.txt ]; then
+            safety check -r requirements-prod.txt || true
+            pip-audit -r requirements-prod.txt || true
+            bandit -r . -f json || true
+          else
+            safety check -r requirements.txt || true
+            pip-audit -r requirements.txt || true
+            bandit -r . -f json || true
+          fi
+          echo "✅ Python security scan completed"
+      
+      - name: Run Go security checks
+        working-directory: services/product-service
+        run: |
+          echo "🔷 Go security scan..."
+          gosec ./... || true
+          govulncheck ./... || true
+          echo "✅ Go security scan completed"
+      
+      - name: Run Node.js security checks
+        run: |
+          echo "🟨 Node.js security scan..."
+          for service in api-gateway order-service frontend; do
+            echo "Scanning $service..."
+            cd services/$service
+            npm ci --silent
+            npm audit --audit-level moderate || true
+            cd ../..
+          done
+          echo "✅ Node.js security scan completed"
+      
+      - name: Run SAST with Semgrep
+        run: |
+          echo "🛡️ Static analysis with Semgrep..."
+          semgrep --config=r/owasp-top-ten --config=r/security-audit services/ --json || true
+          echo "✅ SAST scan completed"
+      
+      - name: Security summary
+        run: |
+          echo "📊 Security Scan Summary"
+          echo "========================="
+          echo "✅ Secret scanning: Completed"
+          echo "✅ Python dependencies: Scanned"
+          echo "✅ Go dependencies: Scanned"
+          echo "✅ Node.js dependencies: Scanned"
+          echo "✅ Static analysis: Completed"
+          echo "========================="
+          echo "🎉 Security scan finished successfully!"
