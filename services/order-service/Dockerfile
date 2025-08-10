@@ -1,51 +1,72 @@
-# Multi-stage Dockerfile for Order Service
+# Security-hardened multi-stage Dockerfile for Order Service
+# Implements CIS Docker Benchmark and OWASP best practices
 
-# Stage 1: Build stage
+# Stage 1: Build stage with security scanning
 FROM node:18-alpine AS builder
 
+# Add security labels
+LABEL security.scan="true" \
+      maintainer="devops@company.com" \
+      version="2.0.0" \
+      description="Hardened Order Service"
+
+# Install security updates
+RUN apk update && \
+    apk upgrade && \
+    apk add --no-cache \
+    ca-certificates \
+    && rm -rf /var/cache/apk/*
+
+# Set working directory
 WORKDIR /app
 
-# Copy package files
-COPY package*.json ./
+# Copy package files with specific permissions
+COPY --chown=node:node package*.json ./
 
-# Install dependencies
-RUN npm ci
-
-# Copy application code
-COPY . .
-
-# Stage 2: Production stage
-FROM node:18-alpine
-
-# Install dumb-init
-RUN apk add --no-cache dumb-init
-
-# Create non-root user
-RUN addgroup -g 1001 nodejs && \
-    adduser -S -u 1001 -G nodejs nodejs
-
-WORKDIR /app
-
-# Copy package files
-COPY package*.json ./
-
-# Install production dependencies
+# Install dependencies with audit
 RUN npm ci --only=production && \
-    npm cache clean --force
+    npm audit fix && \
+    npm cache clean --force && \
+    rm -rf /tmp/*
 
 # Copy application code
-COPY --from=builder --chown=nodejs:nodejs /app/index.js ./
+COPY --chown=node:node . .
 
-# Switch to non-root user
-USER nodejs
+# Remove unnecessary files
+RUN rm -rf .git .gitignore .dockerignore *.md tests/ coverage/ .env.example
 
-# Expose port
+# Stage 2: Distroless production image
+FROM gcr.io/distroless/nodejs18-debian11:nonroot
+
+# Add security labels
+LABEL security.scan="true" \
+      security.nonroot="true" \
+      security.distroless="true"
+
+# Set working directory
+WORKDIR /app
+
+# Copy only necessary files from builder
+COPY --from=builder --chown=nonroot:nonroot /app/node_modules ./node_modules
+COPY --from=builder --chown=nonroot:nonroot /app/index.js ./
+COPY --from=builder --chown=nonroot:nonroot /app/package.json ./
+
+# Set security environment variables
+ENV NODE_ENV=production \
+    NODE_OPTIONS="--max-old-space-size=2048 --enable-source-maps" \
+    NPM_CONFIG_LOGLEVEL=error
+
+# Use non-root user (distroless default)
+USER nonroot
+
+# Expose port (non-privileged)
 EXPOSE 3001
 
-# Health check
+# Health check with timeout
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD node -e "require('http').get('http://localhost:3001/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); });"
+  CMD ["/nodejs/bin/node", "-e", "require('http').get('http://localhost:3001/health', (res) => { process.exit(res.statusCode === 200 ? 0 : 1); });"]
 
+# Security: No shell, minimal attack surface
 # Start the application
-ENTRYPOINT ["dumb-init", "--"]
-CMD ["node", "index.js"]
+ENTRYPOINT ["/nodejs/bin/node"]
+CMD ["index.js"]

@@ -1,0 +1,70 @@
+# Git files
+.git
+.gitignore
+.github
+
+# Documentation
+*.md
+README*
+LICENSE
+CHANGELOG*
+
+# Development files
+.env
+.env.*
+!.env.example
+*.log
+*.pid
+*.seed
+
+# Python cache
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+*.egg-info/
+dist/
+build/
+*.egg
+
+# Testing
+.coverage
+.pytest_cache/
+htmlcov/
+.tox/
+.nox/
+coverage.xml
+*.cover
+.hypothesis/
+tests/
+test/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+
+# Virtual environments
+venv/
+ENV/
+env/
+.venv
+
+# Security scanning
+.scannerwork/
+bandit.json
+safety-report.json
+
+# CI/CD
+.gitlab-ci.yml
+.travis.yml
+Jenkinsfile
+
+# Docker files
+Dockerfile*
+docker-compose*
+.dockerignore

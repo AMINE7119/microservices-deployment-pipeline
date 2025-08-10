@@ -1,52 +1,82 @@
-# Multi-stage Dockerfile for Product Service
+# Security-hardened multi-stage Dockerfile for Product Service (Go)
+# Implements CIS Docker Benchmark and OWASP best practices
 
-# Stage 1: Build stage
+# Stage 1: Build stage with security scanning
 FROM golang:1.21-alpine AS builder
 
-# Install build dependencies
-RUN apk add --no-cache git
+# Add security labels
+LABEL security.scan="true" \
+      maintainer="devops@company.com" \
+      version="2.0.0" \
+      description="Hardened Product Service"
+
+# Install security updates and build tools
+RUN apk update && \
+    apk upgrade && \
+    apk add --no-cache \
+    git \
+    ca-certificates \
+    gcc \
+    musl-dev \
+    && rm -rf /var/cache/apk/*
+
+# Install security scanning tools (compatible with Go 1.21)
+RUN go install github.com/securego/gosec/v2/cmd/gosec@v2.18.2 && \
+    go install golang.org/x/vuln/cmd/govulncheck@v1.0.1
 
 # Set working directory
 WORKDIR /app
 
-# Copy go mod files
-COPY go.mod go.sum* ./
+# Copy go mod files first for better caching
+COPY go.mod go.sum ./
 
-# Download dependencies
-RUN go mod download
+# Download and verify dependencies
+RUN go mod download && \
+    go mod verify
 
 # Copy source code
 COPY . .
 
-# Build the application
-RUN CGO_ENABLED=0 GOOS=linux go build -a -installsuffix cgo -o product-service .
+# Run security scans during build
+RUN gosec -fmt json -out gosec-report.json ./... || true && \
+    govulncheck ./... || true
 
-# Stage 2: Production stage
-FROM alpine:latest
+# Build the binary with security flags
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -ldflags="-w -s -extldflags '-static'" \
+    -a -installsuffix cgo \
+    -trimpath \
+    -o product-service \
+    main.go
 
-# Install ca-certificates for HTTPS
-RUN apk --no-cache add ca-certificates
+# Remove source code and build artifacts
+RUN rm -rf /app/*.go /app/go.* /app/tests/
 
-# Create non-root user
-RUN addgroup -g 1001 appuser && \
-    adduser -D -u 1001 -G appuser appuser
+# Stage 2: Distroless production image
+FROM gcr.io/distroless/static-debian11:nonroot
 
-# Set working directory
-WORKDIR /app
+# Add security labels
+LABEL security.scan="true" \
+      security.nonroot="true" \
+      security.distroless="true" \
+      security.minimal="true"
 
-# Copy binary from builder
-COPY --from=builder --chown=appuser:appuser /app/product-service .
-COPY --chown=appuser:appuser .env.example .env.example
+# Copy the binary from builder
+COPY --from=builder --chown=nonroot:nonroot /app/product-service /product-service
 
-# Switch to non-root user
-USER appuser
+# Copy CA certificates for HTTPS
+COPY --from=builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
-# Expose port
+# Use non-root user (distroless default: 65532)
+USER nonroot
+
+# Expose port (non-privileged)
 EXPOSE 8081
 
-# Health check
+# Health check (binary should support -health flag)
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-  CMD wget --no-verbose --tries=1 --spider http://localhost:8081/health || exit 1
+  CMD ["/product-service", "-health"]
 
-# Run the application
-CMD ["./product-service"]
+# Security: No shell, minimal attack surface, static binary
+# Start the application
+ENTRYPOINT ["/product-service"]

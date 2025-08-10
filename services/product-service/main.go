@@ -2,6 +2,8 @@ package main
 
 import (
 	"encoding/json"
+	"flag"
+	"fmt"
 	"log"
 	"net/http"
 	"os"
@@ -47,6 +49,27 @@ func init() {
 }
 
 func main() {
+	// Parse command line flags
+	healthCheck := flag.Bool("health", false, "Run health check")
+	flag.Parse()
+
+	// If health check flag is set, perform health check and exit
+	if *healthCheck {
+		resp, err := http.Get("http://localhost:8081/health")
+		if err != nil {
+			fmt.Println("Health check failed:", err)
+			os.Exit(1)
+		}
+		defer resp.Body.Close()
+		if resp.StatusCode == http.StatusOK {
+			fmt.Println("Health check passed")
+			os.Exit(0)
+		} else {
+			fmt.Println("Health check failed with status:", resp.StatusCode)
+			os.Exit(1)
+		}
+	}
+
 	port := os.Getenv("PORT")
 	if port == "" {
 		port = "8081"

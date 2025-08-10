@@ -1,8 +1,15 @@
-fastapi==0.104.1
-uvicorn[standard]==0.24.0
-pydantic==2.5.0
+# Production dependencies with latest secure versions
+fastapi==0.109.0
+uvicorn[standard]==0.27.0
+pydantic==2.5.3
 python-dotenv==1.0.0
-pytest==7.4.3
+
+# Testing dependencies (exclude from production)
+pytest==7.4.4
 pytest-cov==4.1.0
-httpx==0.25.1
-pytest-asyncio==0.21.1
+httpx==0.26.0
+pytest-asyncio==0.23.3
+
+# Security tools
+safety==3.0.1
+bandit==1.7.6
