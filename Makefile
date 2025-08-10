@@ -20,7 +20,7 @@ RESET := \033[0m
 
 # Project configuration
 PROJECT_NAME := microservices-deployment-pipeline
-DOCKER_REGISTRY := ghcr.io/$(shell git config --get remote.origin.url | sed 's/.*github.com[:/]\([^/]*\)\/\([^/.]*\).*/\1/')
+DOCKER_REGISTRY := ghcr.io/$(shell git config --get remote.origin.url | sed 's/.*github.com[:/]\([^/]*\)\/\([^/.]*\).*/\1/' | tr '[:upper:]' '[:lower:]')
 SERVICES := frontend api-gateway user-service product-service order-service
 ENVIRONMENTS := development staging production
 KUBERNETES_NAMESPACE := microservices
@@ -63,8 +63,12 @@ install-deps: ## Install all project dependencies
 	cd services/api-gateway && npm install
 	@echo "$(YELLOW)Installing order service dependencies...$(RESET)"
 	cd services/order-service && npm install
-	@echo "$(YELLOW)Installing Python dependencies...$(RESET)"
-	cd services/user-service && pip install -r requirements.txt
+	@echo "$(YELLOW)Installing Python dependencies with uv...$(RESET)"
+	@if ! command -v uv &> /dev/null; then \
+		echo "$(YELLOW)Installing uv first...$(RESET)"; \
+		curl -LsSf https://astral.sh/uv/install.sh | sh; \
+	fi
+	cd services/user-service && ([ -d .venv ] || uv venv) && uv pip install -r requirements.txt
 	@echo "$(YELLOW)Installing Go dependencies...$(RESET)"
 	cd services/product-service && go mod download
 	@echo "$(GREEN)All dependencies installed!$(RESET)"
