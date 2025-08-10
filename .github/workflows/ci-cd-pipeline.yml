@@ -42,7 +42,7 @@ jobs:
           cache-dependency-path: services/user-service/requirements.txt
       
       - name: Setup Go
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: '1.21'
           cache-dependency-path: services/product-service/go.sum
