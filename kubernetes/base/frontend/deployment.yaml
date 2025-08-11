@@ -22,9 +22,11 @@ spec:
         runAsNonRoot: true
         runAsUser: 10001
         fsGroup: 10001
+      imagePullSecrets:
+      - name: ghcr-secret
       containers:
       - name: frontend
-        image: ghcr.io/microservices-pipeline/frontend:latest
+        image: ghcr.io/amine7119/frontend:v1.0.0
         imagePullPolicy: Always
         ports:
         - containerPort: 3000
@@ -36,6 +38,10 @@ spec:
           value: "production"
         - name: REACT_APP_API_URL
           value: "http://api-gateway:8080"
+        volumeMounts:
+        - name: feature-flags
+          mountPath: /etc/feature-flags
+          readOnly: true
         securityContext:
           allowPrivilegeEscalation: false
           runAsNonRoot: true
@@ -67,3 +73,7 @@ spec:
           periodSeconds: 5
           timeoutSeconds: 3
           failureThreshold: 3
+      volumes:
+      - name: feature-flags
+        configMap:
+          name: feature-flags

@@ -1,22 +1,25 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: user-service
+  name: api-gateway-blue
   labels:
-    app: user-service
+    app: api-gateway
+    version: blue
     tier: backend
-    component: microservice
+    component: gateway
 spec:
   replicas: 2
   selector:
     matchLabels:
-      app: user-service
+      app: api-gateway
+      version: blue
   template:
     metadata:
       labels:
-        app: user-service
+        app: api-gateway
+        version: blue
         tier: backend
-        component: microservice
+        component: gateway
     spec:
       securityContext:
         runAsNonRoot: true
@@ -25,23 +28,25 @@ spec:
       imagePullSecrets:
       - name: ghcr-secret
       containers:
-      - name: user-service
-        image: ghcr.io/amine7119/user-service:v1.0.0
+      - name: api-gateway
+        image: ghcr.io/amine7119/microservices-pipeline/api-gateway:phase4-v1
         imagePullPolicy: Always
         ports:
-        - containerPort: 8000
+        - containerPort: 8080
           name: http
         env:
-        - name: DATABASE_URL
-          valueFrom:
-            secretKeyRef:
-              name: user-service-secrets
-              key: database-url
-        - name: JWT_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: user-service-secrets
-              key: jwt-secret
+        - name: PORT
+          value: "8080"
+        - name: NODE_ENV
+          value: "production"
+        - name: VERSION
+          value: "blue"
+        - name: USER_SERVICE_URL
+          value: "http://user-service:3000"
+        - name: PRODUCT_SERVICE_URL
+          value: "http://product-service:8000"
+        - name: ORDER_SERVICE_URL
+          value: "http://order-service:3001"
         securityContext:
           allowPrivilegeEscalation: false
           runAsNonRoot: true
@@ -50,6 +55,8 @@ spec:
             drop:
             - ALL
           readOnlyRootFilesystem: true
+          seccompProfile:
+            type: RuntimeDefault
         resources:
           requests:
             memory: "128Mi"
@@ -60,7 +67,7 @@ spec:
         livenessProbe:
           httpGet:
             path: /health
-            port: 8000
+            port: 8080
           initialDelaySeconds: 30
           periodSeconds: 10
           timeoutSeconds: 5
@@ -68,7 +75,7 @@ spec:
         readinessProbe:
           httpGet:
             path: /health
-            port: 8000
+            port: 8080
           initialDelaySeconds: 15
           periodSeconds: 5
           timeoutSeconds: 3

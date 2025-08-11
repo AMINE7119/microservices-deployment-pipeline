@@ -4,7 +4,10 @@
       "Bash(mkdir:*)",
       "Bash(minikube start:*)",
       "Bash(kubectl:*)",
-      "Bash(kubectl get:*)"
+      "Bash(kubectl get:*)",
+      "Bash(docker pull:*)",
+      "Bash(docker build:*)",
+      "Bash(docker push:*)"
     ],
     "deny": []
   }
