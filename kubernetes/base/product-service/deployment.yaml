@@ -22,9 +22,11 @@ spec:
         runAsNonRoot: true
         runAsUser: 10001
         fsGroup: 10001
+      imagePullSecrets:
+      - name: ghcr-secret
       containers:
       - name: product-service
-        image: ghcr.io/microservices-pipeline/product-service:latest
+        image: ghcr.io/amine7119/product-service:v1.0.0
         imagePullPolicy: Always
         ports:
         - containerPort: 8000

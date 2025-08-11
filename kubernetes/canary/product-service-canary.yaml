@@ -1,20 +1,23 @@
 apiVersion: apps/v1
 kind: Deployment
 metadata:
-  name: user-service
+  name: product-service-canary
   labels:
-    app: user-service
+    app: product-service
+    version: canary
     tier: backend
     component: microservice
 spec:
-  replicas: 2
+  replicas: 1  # Start with 1 replica (25% traffic)
   selector:
     matchLabels:
-      app: user-service
+      app: product-service
+      version: canary
   template:
     metadata:
       labels:
-        app: user-service
+        app: product-service
+        version: canary
         tier: backend
         component: microservice
     spec:
@@ -25,23 +28,22 @@ spec:
       imagePullSecrets:
       - name: ghcr-secret
       containers:
-      - name: user-service
-        image: ghcr.io/amine7119/user-service:v1.0.0
+      - name: product-service
+        image: ghcr.io/amine7119/microservices-pipeline/product-service:phase4-v2  # New version
         imagePullPolicy: Always
         ports:
         - containerPort: 8000
           name: http
         env:
-        - name: DATABASE_URL
+        - name: PORT
+          value: "8000"
+        - name: VERSION
+          value: "canary"
+        - name: MONGO_URI
           valueFrom:
             secretKeyRef:
-              name: user-service-secrets
-              key: database-url
-        - name: JWT_SECRET
-          valueFrom:
-            secretKeyRef:
-              name: user-service-secrets
-              key: jwt-secret
+              name: product-service-secrets
+              key: mongo-uri
         securityContext:
           allowPrivilegeEscalation: false
           runAsNonRoot: true
