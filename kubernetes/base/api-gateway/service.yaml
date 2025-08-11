@@ -6,6 +6,10 @@ metadata:
     app: api-gateway
     tier: backend
     component: gateway
+  annotations:
+    prometheus.io/scrape: "true"
+    prometheus.io/port: "9090"
+    prometheus.io/path: "/metrics"
 spec:
   selector:
     app: api-gateway
@@ -13,5 +17,9 @@ spec:
   - name: http
     port: 8080
     targetPort: 8080
+    protocol: TCP
+  - name: metrics
+    port: 9090
+    targetPort: 9090
     protocol: TCP
   type: ClusterIP

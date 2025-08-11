@@ -17,6 +17,10 @@ spec:
         app: api-gateway
         tier: backend
         component: gateway
+      annotations:
+        prometheus.io/scrape: "true"
+        prometheus.io/port: "9090"
+        prometheus.io/path: "/metrics"
     spec:
       securityContext:
         runAsNonRoot: true
