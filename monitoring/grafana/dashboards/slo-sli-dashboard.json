@@ -1,0 +1,259 @@
+{
+  "dashboard": {
+    "id": null,
+    "uid": "slo-sli",
+    "title": "SLO/SLI Dashboard",
+    "tags": ["slo", "sli", "reliability"],
+    "timezone": "browser",
+    "schemaVersion": 38,
+    "version": 1,
+    "refresh": "1m",
+    "time": {
+      "from": "now-24h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "gridPos": {"h": 6, "w": 8, "x": 0, "y": 0},
+        "type": "gauge",
+        "title": "Availability SLO (Target: 99.9%)",
+        "targets": [
+          {
+            "expr": "(1 - (sum(increase(http_requests_total{status=~\"5..\"}[24h])) / sum(increase(http_requests_total[24h])))) * 100",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 98,
+            "max": 100,
+            "decimals": 3,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "red", "value": null},
+                {"color": "yellow", "value": 99.5},
+                {"color": "green", "value": 99.9}
+              ]
+            }
+          }
+        },
+        "options": {
+          "showThresholdLabels": true,
+          "showThresholdMarkers": true
+        }
+      },
+      {
+        "id": 2,
+        "gridPos": {"h": 6, "w": 8, "x": 8, "y": 0},
+        "type": "gauge",
+        "title": "Latency SLO P95 (Target: <500ms)",
+        "targets": [
+          {
+            "expr": "histogram_quantile(0.95, sum(rate(http_request_duration_seconds_bucket[24h])) by (le)) * 1000",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "ms",
+            "min": 0,
+            "max": 1000,
+            "decimals": 0,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 400},
+                {"color": "red", "value": 500}
+              ]
+            }
+          }
+        },
+        "options": {
+          "showThresholdLabels": true,
+          "showThresholdMarkers": true
+        }
+      },
+      {
+        "id": 3,
+        "gridPos": {"h": 6, "w": 8, "x": 16, "y": 0},
+        "type": "gauge",
+        "title": "Error Rate SLO (Target: <1%)",
+        "targets": [
+          {
+            "expr": "(sum(increase(http_requests_total{status=~\"5..\"}[24h])) / sum(increase(http_requests_total[24h]))) * 100",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "min": 0,
+            "max": 5,
+            "decimals": 2,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 0.5},
+                {"color": "red", "value": 1}
+              ]
+            }
+          }
+        },
+        "options": {
+          "showThresholdLabels": true,
+          "showThresholdMarkers": true
+        }
+      },
+      {
+        "id": 4,
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 6},
+        "type": "timeseries",
+        "title": "Error Budget Burn Rate",
+        "targets": [
+          {
+            "expr": "1 - ((1 - (sum(increase(http_requests_total{status=~\"5..\"}[1h:5m])) by (service) / sum(increase(http_requests_total[1h:5m])) by (service))) / 0.001)",
+            "legendFormat": "{{ service }}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percentunit",
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "fillOpacity": 20,
+              "showPoints": "never"
+            },
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 0.5},
+                {"color": "red", "value": 1}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 5,
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 6},
+        "type": "timeseries",
+        "title": "SLI Trends (7 days)",
+        "targets": [
+          {
+            "expr": "(1 - (sum(increase(http_requests_total{status=~\"5..\"}[1d])) by (service) / sum(increase(http_requests_total[1d])) by (service))) * 100",
+            "legendFormat": "{{ service }} - Availability",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "custom": {
+              "drawStyle": "line",
+              "lineInterpolation": "smooth",
+              "lineWidth": 2,
+              "fillOpacity": 10,
+              "showPoints": "never"
+            }
+          }
+        },
+        "yaxes": [
+          {
+            "min": 99,
+            "max": 100,
+            "format": "percent"
+          }
+        ]
+      },
+      {
+        "id": 6,
+        "gridPos": {"h": 6, "w": 8, "x": 0, "y": 14},
+        "type": "stat",
+        "title": "Monthly Error Budget Remaining",
+        "targets": [
+          {
+            "expr": "(0.001 - (sum(increase(http_requests_total{status=~\"5..\"}[30d])) / sum(increase(http_requests_total[30d])))) / 0.001 * 100",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "decimals": 2,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "red", "value": null},
+                {"color": "yellow", "value": 20},
+                {"color": "green", "value": 50}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 7,
+        "gridPos": {"h": 6, "w": 8, "x": 8, "y": 14},
+        "type": "table",
+        "title": "Service SLI Summary",
+        "targets": [
+          {
+            "expr": "(1 - (sum(increase(http_requests_total{status=~\"5..\"}[24h])) by (service) / sum(increase(http_requests_total[24h])) by (service))) * 100",
+            "format": "table",
+            "instant": true,
+            "refId": "A"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {
+                "Time": true
+              },
+              "renameByName": {
+                "service": "Service",
+                "Value": "Availability %"
+              }
+            }
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "gridPos": {"h": 6, "w": 8, "x": 16, "y": 14},
+        "type": "stat",
+        "title": "SLO Violations (Last 7 Days)",
+        "targets": [
+          {
+            "expr": "count(count by (service) ((1 - (sum(increase(http_requests_total{status=~\"5..\"}[1h])) by (service) / sum(increase(http_requests_total[1h])) by (service))) < 0.999))",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "none",
+            "decimals": 0,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 5},
+                {"color": "red", "value": 10}
+              ]
+            }
+          }
+        }
+      }
+    ]
+  }
+}
