@@ -2,7 +2,7 @@
 # Implements CIS Docker Benchmark and OWASP best practices
 
 # Stage 1: Build stage with security scanning
-FROM python:3.11-slim AS builder
+FROM python:3.13-slim AS builder
 
 # Add security labels
 LABEL security.scan="true" \
@@ -42,7 +42,7 @@ RUN /opt/venv/bin/safety check --json || true && \
 RUN rm -rf .git .gitignore *.md tests/ __pycache__ *.pyc .env* .pytest_cache/
 
 # Stage 2: Distroless production image
-FROM python:3.11-slim
+FROM python:3.13-slim
 
 # Add security labels
 LABEL security.scan="true" \
