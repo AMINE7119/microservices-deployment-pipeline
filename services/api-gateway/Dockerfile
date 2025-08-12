@@ -2,7 +2,7 @@
 # Implements CIS Docker Benchmark and OWASP best practices
 
 # Stage 1: Build stage with security scanning
-FROM node:18-alpine AS builder
+FROM node:24-alpine AS builder
 
 # Add security labels
 LABEL security.scan="true" \
