@@ -2,7 +2,7 @@
 # Implements CIS Docker Benchmark and OWASP best practices
 
 # Stage 1: Build stage with security scanning
-FROM golang:1.21-alpine AS builder
+FROM golang:1.25-alpine AS builder
 
 # Add security labels
 LABEL security.scan="true" \
