@@ -1,0 +1,288 @@
+# Advanced Prometheus Configuration for Performance Optimization
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-performance-config
+  namespace: monitoring
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+      external_labels:
+        cluster: 'performance-optimized'
+        environment: 'production'
+
+    # Advanced alerting configuration
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets:
+                - alertmanager:9093
+          path_prefix: /alertmanager
+
+    # Performance-focused rule files
+    rule_files:
+      - '/etc/prometheus/rules/performance.yml'
+      - '/etc/prometheus/rules/cost-optimization.yml'
+      - '/etc/prometheus/rules/sli-slo.yml'
+      - '/etc/prometheus/rules/rightsizing.yml'
+
+    # Enhanced scrape configurations for performance monitoring
+    scrape_configs:
+      # High-frequency application metrics
+      - job_name: 'microservices-performance'
+        scrape_interval: 5s
+        metrics_path: '/metrics'
+        static_configs:
+          - targets:
+              - 'frontend:9090'
+              - 'api-gateway:9090'
+              - 'user-service:9090'
+              - 'product-service:9090'
+              - 'order-service:9090'
+        metric_relabel_configs:
+          - source_labels: [__name__]
+            regex: 'http_request_duration_seconds.*'
+            target_label: __name__
+            replacement: 'perf_${1}'
+
+      # Infrastructure performance metrics
+      - job_name: 'node-exporter-detailed'
+        scrape_interval: 10s
+        static_configs:
+          - targets:
+              - 'node-exporter:9100'
+        metric_relabel_configs:
+          - source_labels: [__name__]
+            regex: 'node_(cpu|memory|disk|network).*'
+            action: keep
+
+      # Kubernetes resource metrics with performance focus
+      - job_name: 'kube-state-metrics-performance'
+        scrape_interval: 15s
+        static_configs:
+          - targets:
+              - 'kube-state-metrics:8080'
+        metric_relabel_configs:
+          - source_labels: [__name__]
+            regex: 'kube_(pod|deployment|service)_(status|spec|info).*'
+            action: keep
+
+      # JVM performance metrics
+      - job_name: 'jvm-performance'
+        scrape_interval: 10s
+        static_configs:
+          - targets:
+              - 'api-gateway:8081'
+              - 'order-service:8081'
+        metric_relabel_configs:
+          - source_labels: [__name__]
+            regex: 'jvm_(memory|gc|threads).*'
+            action: keep
+
+      # Database performance metrics
+      - job_name: 'database-performance'
+        scrape_interval: 30s
+        static_configs:
+          - targets:
+              - 'postgres-exporter:9187'
+              - 'mongodb-exporter:9216'
+              - 'redis-exporter:9121'
+
+      # CDN and caching performance
+      - job_name: 'cache-performance'
+        scrape_interval: 15s
+        static_configs:
+          - targets:
+              - 'varnish-exporter:9131'
+              - 'cloudfront-exporter:9140'
+
+      # Cost and utilization metrics
+      - job_name: 'cost-metrics'
+        scrape_interval: 300s  # 5 minutes
+        static_configs:
+          - targets:
+              - 'aws-cost-exporter:9150'
+              - 'gcp-cost-exporter:9151'
+
+      # Performance testing metrics
+      - job_name: 'load-test-metrics'
+        scrape_interval: 5s
+        honor_labels: true
+        static_configs:
+          - targets:
+              - 'k6-prometheus-adapter:9090'
+
+      # Service mesh performance (if using Istio)
+      - job_name: 'istio-performance'
+        scrape_interval: 15s
+        kubernetes_sd_configs:
+          - role: endpoints
+        relabel_configs:
+          - source_labels: [__meta_kubernetes_service_name]
+            regex: 'istio-proxy'
+            action: keep
+
+    # Remote write for long-term storage and analysis
+    remote_write:
+      - url: 'http://thanos-receive:19291/api/v1/receive'
+        queue_config:
+          max_samples_per_send: 10000
+          capacity: 20000
+          max_shards: 200
+
+---
+# Performance-focused Prometheus rules
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-performance-rules
+  namespace: monitoring
+data:
+  performance.yml: |
+    groups:
+      - name: performance_optimization
+        interval: 30s
+        rules:
+          # Response time percentiles
+          - record: perf:http_request_duration_p50
+            expr: |
+              histogram_quantile(0.50,
+                sum(rate(http_request_duration_seconds_bucket[5m])) by (service, method, le)
+              )
+
+          - record: perf:http_request_duration_p95
+            expr: |
+              histogram_quantile(0.95,
+                sum(rate(http_request_duration_seconds_bucket[5m])) by (service, method, le)
+              )
+
+          - record: perf:http_request_duration_p99
+            expr: |
+              histogram_quantile(0.99,
+                sum(rate(http_request_duration_seconds_bucket[5m])) by (service, method, le)
+              )
+
+          # Throughput metrics
+          - record: perf:http_requests_per_second
+            expr: |
+              sum(rate(http_requests_total[5m])) by (service, method)
+
+          # Error rate optimization
+          - record: perf:error_rate
+            expr: |
+              sum(rate(http_requests_total{status=~"5.."}[5m])) by (service) /
+              sum(rate(http_requests_total[5m])) by (service)
+
+          # Resource utilization efficiency
+          - record: perf:cpu_utilization_efficiency
+            expr: |
+              (
+                sum(rate(container_cpu_usage_seconds_total[5m])) by (pod) /
+                sum(container_spec_cpu_quota / container_spec_cpu_period) by (pod)
+              ) * 100
+
+          - record: perf:memory_utilization_efficiency
+            expr: |
+              (
+                sum(container_memory_working_set_bytes) by (pod) /
+                sum(container_spec_memory_limit_bytes) by (pod)
+              ) * 100
+
+          # Cache performance metrics
+          - record: perf:cache_hit_ratio
+            expr: |
+              sum(rate(cache_hits_total[5m])) by (service) /
+              (sum(rate(cache_hits_total[5m])) by (service) + sum(rate(cache_misses_total[5m])) by (service))
+
+          # Database performance
+          - record: perf:db_query_duration_p95
+            expr: |
+              histogram_quantile(0.95,
+                sum(rate(db_query_duration_seconds_bucket[5m])) by (query_type, le)
+              )
+
+          # Network performance
+          - record: perf:network_latency_p95
+            expr: |
+              histogram_quantile(0.95,
+                sum(rate(network_request_duration_seconds_bucket[5m])) by (source, destination, le)
+              )
+
+      - name: rightsizing_recommendations
+        interval: 300s  # 5 minutes
+        rules:
+          # CPU rightsizing recommendations
+          - record: rightsizing:cpu_overprovisioned
+            expr: |
+              (
+                (sum(container_spec_cpu_quota / container_spec_cpu_period) by (pod) -
+                 sum(rate(container_cpu_usage_seconds_total[24h])) by (pod)) /
+                sum(container_spec_cpu_quota / container_spec_cpu_period) by (pod)
+              ) > 0.5
+
+          - record: rightsizing:cpu_underprovisioned
+            expr: |
+              (
+                sum(rate(container_cpu_usage_seconds_total[1h])) by (pod) /
+                sum(container_spec_cpu_quota / container_spec_cpu_period) by (pod)
+              ) > 0.8
+
+          # Memory rightsizing recommendations
+          - record: rightsizing:memory_overprovisioned
+            expr: |
+              (
+                (sum(container_spec_memory_limit_bytes) by (pod) -
+                 sum(container_memory_working_set_bytes) by (pod)) /
+                sum(container_spec_memory_limit_bytes) by (pod)
+              ) > 0.5
+
+          - record: rightsizing:memory_underprovisioned
+            expr: |
+              (
+                sum(container_memory_working_set_bytes) by (pod) /
+                sum(container_spec_memory_limit_bytes) by (pod)
+              ) > 0.8
+
+  cost-optimization.yml: |
+    groups:
+      - name: cost_optimization
+        interval: 300s  # 5 minutes
+        rules:
+          # Cost per request metrics
+          - record: cost:cost_per_request
+            expr: |
+              (
+                sum(increase(aws_cost_total[1h])) by (service) +
+                sum(increase(gcp_cost_total[1h])) by (service)
+              ) / sum(increase(http_requests_total[1h])) by (service)
+
+          # Resource cost efficiency
+          - record: cost:cpu_cost_efficiency
+            expr: |
+              sum(rate(container_cpu_usage_seconds_total[1h])) by (pod) /
+              (sum(container_spec_cpu_quota / container_spec_cpu_period) by (pod) * 0.048)  # $0.048 per vCPU hour
+
+          # Spot instance savings
+          - record: cost:spot_instance_savings
+            expr: |
+              (
+                sum(node_spot_instance_cost) /
+                sum(node_on_demand_cost)
+              ) * 100
+
+          # Unused resource cost
+          - record: cost:unused_cpu_cost
+            expr: |
+              sum(
+                (container_spec_cpu_quota / container_spec_cpu_period) -
+                rate(container_cpu_usage_seconds_total[24h])
+              ) by (pod) * 0.048 * 24
+
+          - record: cost:unused_memory_cost
+            expr: |
+              sum(
+                container_spec_memory_limit_bytes -
+                container_memory_working_set_bytes
+              ) by (pod) / 1024 / 1024 / 1024 * 0.006 * 24  # $0.006 per GB hour
