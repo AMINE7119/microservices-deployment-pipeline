@@ -1,0 +1,140 @@
+# GCP-specific configurations for GKE
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: gcp-cloud-config
+  namespace: microservices
+data:
+  cloud_provider: "gcp"
+  region: "us-central1"
+  cluster_type: "gke"
+  load_balancer_class: "gce"
+
+---
+# GCP Workload Identity ServiceAccount
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: microservices-ksa
+  namespace: microservices
+  annotations:
+    iam.gke.io/gcp-service-account: microservices-gsa@PROJECT-ID.iam.gserviceaccount.com
+
+---
+# Ingress with GCP GCLB annotations
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: microservices-ingress-gcp
+  namespace: microservices
+  annotations:
+    kubernetes.io/ingress.class: "gce"
+    kubernetes.io/ingress.global-static-ip-name: "microservices-global-ip"
+    ingress.gcp.kubernetes.io/managed-certificates: "microservices-ssl-cert"
+    cloud.google.com/backend-config: '{"default": "microservices-backendconfig"}'
+    cloud.google.com/armor-config: '{"microservices-security-policy": "default"}'
+spec:
+  rules:
+    - host: gcp.microservices.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  number: 8080
+
+---
+# GCP Backend Configuration
+apiVersion: cloud.google.com/v1
+kind: BackendConfig
+metadata:
+  name: microservices-backendconfig
+  namespace: microservices
+spec:
+  healthCheck:
+    checkIntervalSec: 10
+    timeoutSec: 5
+    healthyThreshold: 2
+    unhealthyThreshold: 3
+    type: HTTP
+    requestPath: /health
+    port: 8080
+  sessionAffinity:
+    affinityType: "CLIENT_IP"
+  cdn:
+    enabled: true
+    cachePolicy:
+      includeHost: true
+      includeProtocol: true
+      includeQueryString: false
+  connectionDraining:
+    drainingTimeoutSec: 300
+
+---
+# GCP Managed SSL Certificate
+apiVersion: networking.gke.io/v1
+kind: ManagedCertificate
+metadata:
+  name: microservices-ssl-cert
+  namespace: microservices
+spec:
+  domains:
+    - gcp.microservices.example.com
+
+---
+# GCP-specific resource limits
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: gcp-resource-limits
+  namespace: microservices
+spec:
+  limits:
+    - default:
+        cpu: "500m"
+        memory: "512Mi"
+      defaultRequest:
+        cpu: "100m"
+        memory: "128Mi"
+      type: Container
+
+---
+# GCP Cloud Logging configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluentd-gcp-config
+  namespace: kube-system
+data:
+  fluent.conf: |
+    <source>
+      @type tail
+      path /var/log/containers/*.log
+      pos_file /var/log/fluentd-containers.log.pos
+      tag kubernetes.*
+      read_from_head true
+      <parse>
+        @type json
+        time_format %Y-%m-%dT%H:%M:%S.%NZ
+      </parse>
+    </source>
+
+    <filter kubernetes.**>
+      @type kubernetes_metadata
+    </filter>
+
+    <match kubernetes.**>
+      @type google_cloud
+      project_id "PROJECT-ID"
+      zone "us-central1-a"
+    </match>
