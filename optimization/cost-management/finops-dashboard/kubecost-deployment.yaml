@@ -1,0 +1,239 @@
+# Kubecost Deployment for Multi-Cloud Cost Monitoring
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: kubecost
+  labels:
+    name: kubecost
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: kubecost
+  namespace: kubecost
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: kubecost
+rules:
+  - apiGroups: [""]
+    resources: ["nodes", "pods", "services", "resourcequotas", "replicationcontrollers", "limitranges", "persistentvolumeclaims", "persistentvolumes", "namespaces", "endpoints"]
+    verbs: ["list", "watch", "get"]
+  - apiGroups: ["extensions"]
+    resources: ["daemonsets", "deployments", "replicasets"]
+    verbs: ["list", "watch", "get"]
+  - apiGroups: ["apps"]
+    resources: ["statefulsets", "deployments", "daemonsets", "replicasets"]
+    verbs: ["list", "watch", "get"]
+  - apiGroups: ["batch"]
+    resources: ["cronjobs", "jobs"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["autoscaling"]
+    resources: ["horizontalpodautoscalers"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["policy"]
+    resources: ["poddisruptionbudgets"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["storage.k8s.io"]
+    resources: ["storageclasses"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["nodes", "pods"]
+    verbs: ["get", "list"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: kubecost
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: kubecost
+subjects:
+  - kind: ServiceAccount
+    name: kubecost
+    namespace: kubecost
+
+---
+# Kubecost Cost Analyzer Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: kubecost-cost-analyzer
+  namespace: kubecost
+  labels:
+    app: cost-analyzer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cost-analyzer
+  template:
+    metadata:
+      labels:
+        app: cost-analyzer
+    spec:
+      serviceAccountName: kubecost
+      containers:
+        - name: cost-analyzer
+          image: kubecost/cost-analyzer:prod-1.106.0
+          ports:
+            - containerPort: 9003
+            - containerPort: 9090
+          env:
+            - name: PROMETHEUS_SERVER_ENDPOINT
+              value: "http://prometheus.monitoring.svc.cluster.local:9090"
+            - name: CLUSTER_ID
+              value: "multicloud-cluster"
+            - name: KUBECOST_TOKEN
+              value: "" # Add your Kubecost token here
+            - name: CLOUD_PROVIDER_API_KEY
+              value: "" # Add your cloud provider API key
+          resources:
+            requests:
+              cpu: 200m
+              memory: 512Mi
+            limits:
+              cpu: 1000m
+              memory: 2Gi
+          volumeMounts:
+            - name: cost-analyzer-config
+              mountPath: /var/configs
+        - name: cost-model
+          image: kubecost/cost-model:prod-1.106.0
+          ports:
+            - containerPort: 9003
+          env:
+            - name: PROMETHEUS_SERVER_ENDPOINT
+              value: "http://prometheus.monitoring.svc.cluster.local:9090"
+            - name: CLOUD_PROVIDER_API_KEY
+              value: "" # Add your cloud provider API key
+            - name: CLUSTER_ID
+              value: "multicloud-cluster"
+          resources:
+            requests:
+              cpu: 200m
+              memory: 256Mi
+            limits:
+              cpu: 800m
+              memory: 1Gi
+      volumes:
+        - name: cost-analyzer-config
+          configMap:
+            name: kubecost-config
+
+---
+# Kubecost Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: kubecost-config
+  namespace: kubecost
+data:
+  config.yaml: |
+    # Multi-cloud cost configuration
+    cloudProviders:
+      aws:
+        enabled: true
+        spotDataRegion: "us-east-1"
+        spotDataBucket: ""
+        projectID: ""
+        key: ""
+      gcp:
+        enabled: true
+        projectID: ""
+        billingDataDataset: ""
+        key: ""
+      azure:
+        enabled: false
+    
+    # Resource allocation settings
+    allocation:
+      defaultIdle: true
+      shareResources: false
+      shareCost: false
+    
+    # Performance optimizations
+    prometheus:
+      queryTimeout: 60s
+      stepSize: "1m"
+    
+    # Cost optimization features
+    recommendations:
+      enabled: true
+      cpu:
+        enabled: true
+        threshold: 0.05
+      memory:
+        enabled: true
+        threshold: 0.05
+      
+    # Multi-cluster support
+    clusters:
+      - name: "aws-eks"
+        region: "us-east-1"
+        provider: "aws"
+      - name: "gcp-gke"
+        region: "us-central1"
+        provider: "gcp"
+
+---
+# Kubecost Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: kubecost-cost-analyzer
+  namespace: kubecost
+  labels:
+    app: cost-analyzer
+spec:
+  type: ClusterIP
+  ports:
+    - name: http
+      port: 9090
+      targetPort: 9090
+    - name: cost-model
+      port: 9003
+      targetPort: 9003
+  selector:
+    app: cost-analyzer
+
+---
+# Kubecost Ingress
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: kubecost-ingress
+  namespace: kubecost
+  annotations:
+    nginx.ingress.kubernetes.io/rewrite-target: /
+    nginx.ingress.kubernetes.io/auth-type: basic
+    nginx.ingress.kubernetes.io/auth-secret: kubecost-basic-auth
+    nginx.ingress.kubernetes.io/auth-realm: 'Authentication Required'
+spec:
+  rules:
+    - host: kubecost.microservices.local
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: kubecost-cost-analyzer
+                port:
+                  number: 9090
+
+---
+# Basic Auth Secret for Kubecost (base64 encoded admin:admin123)
+apiVersion: v1
+kind: Secret
+metadata:
+  name: kubecost-basic-auth
+  namespace: kubecost
+type: Opaque
+data:
+  auth: YWRtaW46JGFwcjEkSDY1dnVzRnAkLnpYQjBmUDZSdWNMRWVUVzFPa09WLgoK  # admin:admin123

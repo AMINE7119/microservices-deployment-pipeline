@@ -1,0 +1,554 @@
+# Automated Resource Rightsizing System
+# Uses VPA recommendations to automatically adjust resource requests/limits
+
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: rightsizing-controller
+  namespace: monitoring
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: rightsizing-controller
+rules:
+  - apiGroups: [""]
+    resources: ["pods", "nodes"]
+    verbs: ["get", "list", "watch"]
+  - apiGroups: ["apps"]
+    resources: ["deployments", "replicasets", "statefulsets", "daemonsets"]
+    verbs: ["get", "list", "watch", "update", "patch"]
+  - apiGroups: ["autoscaling.k8s.io"]
+    resources: ["verticalpodautoscalers"]
+    verbs: ["get", "list", "watch", "create", "update", "patch"]
+  - apiGroups: ["metrics.k8s.io"]
+    resources: ["nodes", "pods"]
+    verbs: ["get", "list"]
+  - apiGroups: [""]
+    resources: ["events"]
+    verbs: ["create"]
+
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: rightsizing-controller
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: rightsizing-controller
+subjects:
+  - kind: ServiceAccount
+    name: rightsizing-controller
+    namespace: monitoring
+
+---
+# Rightsizing Controller Deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: rightsizing-controller
+  namespace: monitoring
+  labels:
+    app: rightsizing-controller
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: rightsizing-controller
+  template:
+    metadata:
+      labels:
+        app: rightsizing-controller
+    spec:
+      serviceAccountName: rightsizing-controller
+      containers:
+        - name: rightsizing-controller
+          image: python:3.11-slim
+          command:
+            - python
+            - -c
+            - |
+              import json
+              import time
+              import requests
+              import logging
+              from kubernetes import client, config
+              from datetime import datetime, timedelta
+              
+              # Configure logging
+              logging.basicConfig(level=logging.INFO)
+              logger = logging.getLogger(__name__)
+              
+              # Load Kubernetes config
+              try:
+                  config.load_incluster_config()
+              except:
+                  config.load_kube_config()
+              
+              # Kubernetes API clients
+              apps_v1 = client.AppsV1Api()
+              core_v1 = client.CoreV1Api()
+              custom_api = client.CustomObjectsApi()
+              
+              # Configuration
+              PROMETHEUS_URL = "http://prometheus.monitoring.svc.cluster.local:9090"
+              RIGHTSIZING_INTERVAL = 3600  # 1 hour
+              CPU_THRESHOLD_OVER = 0.5   # 50% overprovisioned
+              CPU_THRESHOLD_UNDER = 0.8  # 80% underprovisioned
+              MEMORY_THRESHOLD_OVER = 0.5
+              MEMORY_THRESHOLD_UNDER = 0.8
+              
+              def query_prometheus(query):
+                  """Query Prometheus for metrics"""
+                  try:
+                      response = requests.get(
+                          f"{PROMETHEUS_URL}/api/v1/query",
+                          params={"query": query},
+                          timeout=30
+                      )
+                      if response.status_code == 200:
+                          return response.json()
+                  except Exception as e:
+                      logger.error(f"Prometheus query failed: {e}")
+                  return None
+              
+              def get_rightsizing_recommendations():
+                  """Get rightsizing recommendations from Prometheus"""
+                  recommendations = {}
+                  
+                  # CPU overprovisioned pods
+                  cpu_over_query = f"""
+                  (
+                    (sum(container_spec_cpu_quota / container_spec_cpu_period) by (pod) -
+                     sum(rate(container_cpu_usage_seconds_total[24h])) by (pod)) /
+                    sum(container_spec_cpu_quota / container_spec_cpu_period) by (pod)
+                  ) > {CPU_THRESHOLD_OVER}
+                  """
+                  
+                  cpu_over_data = query_prometheus(cpu_over_query)
+                  if cpu_over_data and cpu_over_data['data']['result']:
+                      for result in cpu_over_data['data']['result']:
+                          pod_name = result['metric']['pod']
+                          over_percentage = float(result['value'][1])
+                          recommendations[pod_name] = recommendations.get(pod_name, {})
+                          recommendations[pod_name]['cpu_overprovisioned'] = over_percentage
+                  
+                  # CPU underprovisioned pods
+                  cpu_under_query = f"""
+                  (
+                    sum(rate(container_cpu_usage_seconds_total[1h])) by (pod) /
+                    sum(container_spec_cpu_quota / container_spec_cpu_period) by (pod)
+                  ) > {CPU_THRESHOLD_UNDER}
+                  """
+                  
+                  cpu_under_data = query_prometheus(cpu_under_query)
+                  if cpu_under_data and cpu_under_data['data']['result']:
+                      for result in cpu_under_data['data']['result']:
+                          pod_name = result['metric']['pod']
+                          utilization = float(result['value'][1])
+                          recommendations[pod_name] = recommendations.get(pod_name, {})
+                          recommendations[pod_name]['cpu_underprovisioned'] = utilization
+                  
+                  # Memory overprovisioned pods
+                  memory_over_query = f"""
+                  (
+                    (sum(container_spec_memory_limit_bytes) by (pod) -
+                     sum(container_memory_working_set_bytes) by (pod)) /
+                    sum(container_spec_memory_limit_bytes) by (pod)
+                  ) > {MEMORY_THRESHOLD_OVER}
+                  """
+                  
+                  memory_over_data = query_prometheus(memory_over_query)
+                  if memory_over_data and memory_over_data['data']['result']:
+                      for result in memory_over_data['data']['result']:
+                          pod_name = result['metric']['pod']
+                          over_percentage = float(result['value'][1])
+                          recommendations[pod_name] = recommendations.get(pod_name, {})
+                          recommendations[pod_name]['memory_overprovisioned'] = over_percentage
+                  
+                  # Memory underprovisioned pods
+                  memory_under_query = f"""
+                  (
+                    sum(container_memory_working_set_bytes) by (pod) /
+                    sum(container_spec_memory_limit_bytes) by (pod)
+                  ) > {MEMORY_THRESHOLD_UNDER}
+                  """
+                  
+                  memory_under_data = query_prometheus(memory_under_query)
+                  if memory_under_data and memory_under_data['data']['result']:
+                      for result in memory_under_data['data']['result']:
+                          pod_name = result['metric']['pod']
+                          utilization = float(result['value'][1])
+                          recommendations[pod_name] = recommendations.get(pod_name, {})
+                          recommendations[pod_name]['memory_underprovisioned'] = utilization
+                  
+                  return recommendations
+              
+              def get_vpa_recommendations(namespace, deployment_name):
+                  """Get VPA recommendations for a deployment"""
+                  try:
+                      vpa_name = f"{deployment_name}-vpa"
+                      vpa = custom_api.get_namespaced_custom_object(
+                          group="autoscaling.k8s.io",
+                          version="v1",
+                          namespace=namespace,
+                          plural="verticalpodautoscalers",
+                          name=vpa_name
+                      )
+                      
+                      if 'status' in vpa and 'recommendation' in vpa['status']:
+                          return vpa['status']['recommendation']
+                  except Exception as e:
+                      logger.debug(f"No VPA found for {deployment_name}: {e}")
+                  return None
+              
+              def calculate_rightsizing_adjustments(pod_name, recommendations, vpa_recommendations):
+                  """Calculate optimal resource adjustments"""
+                  adjustments = {}
+                  
+                  # CPU adjustments
+                  if 'cpu_overprovisioned' in recommendations:
+                      over_pct = recommendations['cpu_overprovisioned']
+                      if over_pct > 0.5:  # More than 50% overprovisioned
+                          reduction_factor = 1 - (over_pct * 0.5)  # Reduce by half the overprovision
+                          adjustments['cpu_reduction_factor'] = reduction_factor
+                  
+                  elif 'cpu_underprovisioned' in recommendations:
+                      utilization = recommendations['cpu_underprovisioned']
+                      if utilization > 0.8:  # More than 80% utilized
+                          increase_factor = 1 + ((utilization - 0.7) * 2)  # Increase to target 70% util
+                          adjustments['cpu_increase_factor'] = increase_factor
+                  
+                  # Memory adjustments
+                  if 'memory_overprovisioned' in recommendations:
+                      over_pct = recommendations['memory_overprovisioned']
+                      if over_pct > 0.5:
+                          reduction_factor = 1 - (over_pct * 0.4)  # Conservative memory reduction
+                          adjustments['memory_reduction_factor'] = reduction_factor
+                  
+                  elif 'memory_underprovisioned' in recommendations:
+                      utilization = recommendations['memory_underprovisioned']
+                      if utilization > 0.8:
+                          increase_factor = 1 + ((utilization - 0.7) * 1.5)
+                          adjustments['memory_increase_factor'] = increase_factor
+                  
+                  # Use VPA recommendations if available
+                  if vpa_recommendations and 'containerRecommendations' in vpa_recommendations:
+                      for container_rec in vpa_recommendations['containerRecommendations']:
+                          if 'target' in container_rec:
+                              target = container_rec['target']
+                              adjustments['vpa_cpu_target'] = target.get('cpu')
+                              adjustments['vpa_memory_target'] = target.get('memory')
+                  
+                  return adjustments
+              
+              def apply_rightsizing(namespace, deployment_name, adjustments):
+                  """Apply rightsizing adjustments to deployment"""
+                  try:
+                      # Get current deployment
+                      deployment = apps_v1.read_namespaced_deployment(
+                          name=deployment_name,
+                          namespace=namespace
+                      )
+                      
+                      # Get current resources
+                      containers = deployment.spec.template.spec.containers
+                      for container in containers:
+                          if not container.resources:
+                              container.resources = client.V1ResourceRequirements()
+                          if not container.resources.requests:
+                              container.resources.requests = {}
+                          if not container.resources.limits:
+                              container.resources.limits = {}
+                          
+                          # Apply CPU adjustments
+                          if 'cpu_reduction_factor' in adjustments:
+                              current_cpu = container.resources.requests.get('cpu', '100m')
+                              current_cpu_val = parse_cpu(current_cpu)
+                              new_cpu_val = int(current_cpu_val * adjustments['cpu_reduction_factor'])
+                              container.resources.requests['cpu'] = f"{new_cpu_val}m"
+                              container.resources.limits['cpu'] = f"{int(new_cpu_val * 1.5)}m"
+                              logger.info(f"Reduced CPU for {deployment_name}: {current_cpu} -> {new_cpu_val}m")
+                          
+                          elif 'cpu_increase_factor' in adjustments:
+                              current_cpu = container.resources.requests.get('cpu', '100m')
+                              current_cpu_val = parse_cpu(current_cpu)
+                              new_cpu_val = int(current_cpu_val * adjustments['cpu_increase_factor'])
+                              container.resources.requests['cpu'] = f"{new_cpu_val}m"
+                              container.resources.limits['cpu'] = f"{int(new_cpu_val * 1.5)}m"
+                              logger.info(f"Increased CPU for {deployment_name}: {current_cpu} -> {new_cpu_val}m")
+                          
+                          # Apply memory adjustments
+                          if 'memory_reduction_factor' in adjustments:
+                              current_memory = container.resources.requests.get('memory', '128Mi')
+                              current_memory_val = parse_memory(current_memory)
+                              new_memory_val = int(current_memory_val * adjustments['memory_reduction_factor'])
+                              container.resources.requests['memory'] = f"{new_memory_val}Mi"
+                              container.resources.limits['memory'] = f"{int(new_memory_val * 1.5)}Mi"
+                              logger.info(f"Reduced memory for {deployment_name}: {current_memory} -> {new_memory_val}Mi")
+                          
+                          elif 'memory_increase_factor' in adjustments:
+                              current_memory = container.resources.requests.get('memory', '128Mi')
+                              current_memory_val = parse_memory(current_memory)
+                              new_memory_val = int(current_memory_val * adjustments['memory_increase_factor'])
+                              container.resources.requests['memory'] = f"{new_memory_val}Mi"
+                              container.resources.limits['memory'] = f"{int(new_memory_val * 1.5)}Mi"
+                              logger.info(f"Increased memory for {deployment_name}: {current_memory} -> {new_memory_val}Mi")
+                          
+                          # Apply VPA recommendations if available
+                          if 'vpa_cpu_target' in adjustments and adjustments['vpa_cpu_target']:
+                              container.resources.requests['cpu'] = adjustments['vpa_cpu_target']
+                              container.resources.limits['cpu'] = adjustments['vpa_cpu_target'].replace('m', '').replace('Mi', '').replace('Gi', '')
+                              if container.resources.limits['cpu'].isdigit():
+                                  container.resources.limits['cpu'] = f"{int(container.resources.limits['cpu']) * 15 // 10}m"
+                              logger.info(f"Applied VPA CPU recommendation for {deployment_name}: {adjustments['vpa_cpu_target']}")
+                          
+                          if 'vpa_memory_target' in adjustments and adjustments['vpa_memory_target']:
+                              container.resources.requests['memory'] = adjustments['vpa_memory_target']
+                              memory_val = adjustments['vpa_memory_target'].replace('Mi', '').replace('Gi', '')
+                              if memory_val.replace('.', '').isdigit():
+                                  if 'Gi' in adjustments['vpa_memory_target']:
+                                      container.resources.limits['memory'] = f"{float(memory_val) * 1.5}Gi"
+                                  else:
+                                      container.resources.limits['memory'] = f"{int(float(memory_val) * 1.5)}Mi"
+                              logger.info(f"Applied VPA memory recommendation for {deployment_name}: {adjustments['vpa_memory_target']}")
+                      
+                      # Update deployment
+                      apps_v1.patch_namespaced_deployment(
+                          name=deployment_name,
+                          namespace=namespace,
+                          body=deployment
+                      )
+                      
+                      # Create event
+                      core_v1.create_namespaced_event(
+                          namespace=namespace,
+                          body=client.V1Event(
+                              metadata=client.V1ObjectMeta(
+                                  name=f"rightsizing-{deployment_name}-{int(time.time())}",
+                                  namespace=namespace
+                              ),
+                              involved_object=client.V1ObjectReference(
+                                  api_version="apps/v1",
+                                  kind="Deployment",
+                                  name=deployment_name,
+                                  namespace=namespace
+                              ),
+                              reason="Rightsizing",
+                              message=f"Applied rightsizing adjustments: {adjustments}",
+                              first_timestamp=datetime.utcnow(),
+                              last_timestamp=datetime.utcnow(),
+                              count=1,
+                              type="Normal"
+                          )
+                      )
+                      
+                      return True
+                  except Exception as e:
+                      logger.error(f"Failed to apply rightsizing to {deployment_name}: {e}")
+                      return False
+              
+              def parse_cpu(cpu_str):
+                  """Parse CPU string to millicores"""
+                  if cpu_str.endswith('m'):
+                      return int(cpu_str[:-1])
+                  else:
+                      return int(float(cpu_str) * 1000)
+              
+              def parse_memory(memory_str):
+                  """Parse memory string to Mi"""
+                  if memory_str.endswith('Mi'):
+                      return int(memory_str[:-2])
+                  elif memory_str.endswith('Gi'):
+                      return int(float(memory_str[:-2]) * 1024)
+                  else:
+                      return int(memory_str) // (1024 * 1024)
+              
+              def get_pod_deployment_mapping():
+                  """Get mapping of pods to their deployments"""
+                  mapping = {}
+                  try:
+                      # Get all deployments
+                      deployments = apps_v1.list_deployment_for_all_namespaces()
+                      for deployment in deployments.items:
+                          # Get pods for this deployment
+                          label_selector = ",".join([f"{k}={v}" for k, v in deployment.spec.selector.match_labels.items()])
+                          pods = core_v1.list_namespaced_pod(
+                              namespace=deployment.metadata.namespace,
+                              label_selector=label_selector
+                          )
+                          for pod in pods.items:
+                              mapping[pod.metadata.name] = {
+                                  'deployment': deployment.metadata.name,
+                                  'namespace': deployment.metadata.namespace
+                              }
+                  except Exception as e:
+                      logger.error(f"Failed to get pod-deployment mapping: {e}")
+                  return mapping
+              
+              def main():
+                  """Main rightsizing loop"""
+                  logger.info("Starting Rightsizing Controller")
+                  
+                  while True:
+                      try:
+                          logger.info("Starting rightsizing analysis...")
+                          
+                          # Get pod to deployment mapping
+                          pod_deployment_mapping = get_pod_deployment_mapping()
+                          
+                          # Get rightsizing recommendations
+                          recommendations = get_rightsizing_recommendations()
+                          
+                          if not recommendations:
+                              logger.info("No rightsizing recommendations found")
+                          else:
+                              logger.info(f"Found {len(recommendations)} pods with rightsizing opportunities")
+                              
+                              # Process each recommendation
+                              for pod_name, pod_recommendations in recommendations.items():
+                                  if pod_name in pod_deployment_mapping:
+                                      deployment_info = pod_deployment_mapping[pod_name]
+                                      deployment_name = deployment_info['deployment']
+                                      namespace = deployment_info['namespace']
+                                      
+                                      # Skip system namespaces
+                                      if namespace in ['kube-system', 'kube-public', 'monitoring']:
+                                          continue
+                                      
+                                      logger.info(f"Processing rightsizing for pod {pod_name} in deployment {deployment_name}")
+                                      
+                                      # Get VPA recommendations
+                                      vpa_recommendations = get_vpa_recommendations(namespace, deployment_name)
+                                      
+                                      # Calculate adjustments
+                                      adjustments = calculate_rightsizing_adjustments(
+                                          pod_name, pod_recommendations, vpa_recommendations
+                                      )
+                                      
+                                      if adjustments:
+                                          logger.info(f"Applying rightsizing adjustments to {deployment_name}: {adjustments}")
+                                          apply_rightsizing(namespace, deployment_name, adjustments)
+                                      else:
+                                          logger.info(f"No adjustments needed for {deployment_name}")
+                          
+                          logger.info(f"Rightsizing analysis complete. Sleeping for {RIGHTSIZING_INTERVAL} seconds...")
+                          time.sleep(RIGHTSIZING_INTERVAL)
+                          
+                      except Exception as e:
+                          logger.error(f"Error in rightsizing loop: {e}")
+                          time.sleep(300)  # Sleep 5 minutes on error
+              
+              if __name__ == "__main__":
+                  main()
+          env:
+            - name: PYTHONUNBUFFERED
+              value: "1"
+          resources:
+            requests:
+              cpu: 100m
+              memory: 256Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: config
+              mountPath: /config
+      volumes:
+        - name: config
+          configMap:
+            name: rightsizing-config
+
+---
+# Rightsizing Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: rightsizing-config
+  namespace: monitoring
+data:
+  config.yaml: |
+    # Rightsizing Controller Configuration
+    
+    # Thresholds for rightsizing decisions
+    thresholds:
+      cpu:
+        overprovisioned: 0.5    # 50% unused CPU
+        underprovisioned: 0.8   # 80% CPU utilization
+      memory:
+        overprovisioned: 0.5    # 50% unused memory
+        underprovisioned: 0.8   # 80% memory utilization
+    
+    # Analysis windows
+    analysis:
+      cpu_window: "24h"         # CPU analysis window
+      memory_window: "24h"      # Memory analysis window
+      evaluation_interval: 3600 # 1 hour
+    
+    # Safety limits
+    safety:
+      min_cpu: "50m"           # Minimum CPU request
+      max_cpu: "4000m"         # Maximum CPU request
+      min_memory: "64Mi"       # Minimum memory request
+      max_memory: "8Gi"        # Maximum memory request
+      max_adjustment_factor: 2.0 # Maximum adjustment in single operation
+    
+    # Namespace filtering
+    namespaces:
+      include: ["microservices", "frontend", "backend"]
+      exclude: ["kube-system", "kube-public", "monitoring", "istio-system"]
+    
+    # Cost optimization settings
+    cost_optimization:
+      enabled: true
+      target_utilization:
+        cpu: 0.7              # Target 70% CPU utilization
+        memory: 0.7           # Target 70% memory utilization
+      
+      # Spot instance preferences
+      spot_instances:
+        enabled: true
+        max_percentage: 70    # Max 70% spot instances
+    
+    # Notification settings
+    notifications:
+      enabled: true
+      slack_webhook: ""       # Slack webhook for notifications
+      email_recipients: []    # Email recipients for alerts
+
+---
+# Rightsizing Metrics Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: rightsizing-metrics
+  namespace: monitoring
+  labels:
+    app: rightsizing-controller
+spec:
+  ports:
+    - name: metrics
+      port: 8080
+      targetPort: 8080
+  selector:
+    app: rightsizing-controller
+
+---
+# ServiceMonitor for Prometheus scraping
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: rightsizing-controller
+  namespace: monitoring
+  labels:
+    app: rightsizing-controller
+spec:
+  selector:
+    matchLabels:
+      app: rightsizing-controller
+  endpoints:
+    - port: metrics
+      interval: 30s
+      path: /metrics

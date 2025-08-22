@@ -11,7 +11,8 @@
       "Bash(zip:*)",
       "Bash(cp:*)",
       "Bash(python3:*)",
-      "Bash(touch:*)"
+      "Bash(touch:*)",
+      "Bash(chmod:*)"
     ],
     "deny": []
   }

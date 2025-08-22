@@ -1,0 +1,308 @@
+# Multi-Cloud Cost Alert System
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cost-alert-config
+  namespace: monitoring
+data:
+  cost-alerts.yml: |
+    groups:
+      - name: cost_management_alerts
+        interval: 300s  # Check every 5 minutes
+        rules:
+          # AWS Cost Alerts
+          - alert: AWSHighCostAlert
+            expr: |
+              increase(aws_cost_total[24h]) > 500
+            for: 15m
+            labels:
+              severity: warning
+              cloud_provider: aws
+              alert_type: cost_threshold
+            annotations:
+              summary: "High AWS costs detected"
+              description: "AWS daily costs exceeded $500. Current: ${{ $value }}"
+              runbook_url: "https://wiki.company.com/runbooks/aws-cost-optimization"
+
+          - alert: AWSCostSpike
+            expr: |
+              increase(aws_cost_total[1h]) / avg_over_time(increase(aws_cost_total[1h])[24h:1h]) > 3
+            for: 10m
+            labels:
+              severity: critical
+              cloud_provider: aws
+              alert_type: cost_anomaly
+            annotations:
+              summary: "AWS cost spike detected"
+              description: "AWS hourly costs are 3x higher than average: ${{ $value }}"
+              
+          # GCP Cost Alerts
+          - alert: GCPHighCostAlert
+            expr: |
+              increase(gcp_cost_total[24h]) > 400
+            for: 15m
+            labels:
+              severity: warning
+              cloud_provider: gcp
+              alert_type: cost_threshold
+            annotations:
+              summary: "High GCP costs detected"
+              description: "GCP daily costs exceeded $400. Current: ${{ $value }}"
+
+          - alert: GCPCostSpike
+            expr: |
+              increase(gcp_cost_total[1h]) / avg_over_time(increase(gcp_cost_total[1h])[24h:1h]) > 3
+            for: 10m
+            labels:
+              severity: critical
+              cloud_provider: gcp
+              alert_type: cost_anomaly
+            annotations:
+              summary: "GCP cost spike detected"
+              description: "GCP hourly costs are 3x higher than average: ${{ $value }}"
+
+          # Service-specific cost alerts
+          - alert: ServiceCostThreshold
+            expr: |
+              sum(increase(service_cost_total[24h])) by (service) > 100
+            for: 30m
+            labels:
+              severity: warning
+              alert_type: service_cost
+            annotations:
+              summary: "Service {{ $labels.service }} cost threshold exceeded"
+              description: "Service {{ $labels.service }} daily cost: ${{ $value }}"
+
+          # Resource utilization cost efficiency
+          - alert: LowCPUUtilizationCost
+            expr: |
+              (
+                avg_over_time(
+                  (sum(rate(container_cpu_usage_seconds_total[5m])) by (pod) /
+                   sum(container_spec_cpu_quota / container_spec_cpu_period) by (pod))
+                [24h:5m]) < 0.2
+              ) and on(pod) 
+              (sum(increase(pod_cost_total[24h])) by (pod) > 10)
+            for: 60m
+            labels:
+              severity: warning
+              alert_type: efficiency
+            annotations:
+              summary: "Pod {{ $labels.pod }} has low CPU utilization but high cost"
+              description: "CPU utilization: {{ $value | humanizePercentage }}, Daily cost: ${{ $labels.cost }}"
+
+          - alert: LowMemoryUtilizationCost
+            expr: |
+              (
+                avg_over_time(
+                  (sum(container_memory_working_set_bytes) by (pod) /
+                   sum(container_spec_memory_limit_bytes) by (pod))
+                [24h:5m]) < 0.3
+              ) and on(pod)
+              (sum(increase(pod_cost_total[24h])) by (pod) > 10)
+            for: 60m
+            labels:
+              severity: warning
+              alert_type: efficiency
+            annotations:
+              summary: "Pod {{ $labels.pod }} has low memory utilization but high cost"
+              description: "Memory utilization: {{ $value | humanizePercentage }}, Daily cost: ${{ $labels.cost }}"
+
+          # Budget alerts
+          - alert: MonthlyBudgetAlert75
+            expr: |
+              (
+                sum(increase(total_cost[30d])) / 
+                scalar(monthly_budget_limit) * 100
+              ) > 75
+            for: 0s
+            labels:
+              severity: warning
+              alert_type: budget
+            annotations:
+              summary: "Monthly budget 75% exceeded"
+              description: "Current spend is {{ $value | humanizePercentage }} of monthly budget"
+
+          - alert: MonthlyBudgetAlert90
+            expr: |
+              (
+                sum(increase(total_cost[30d])) / 
+                scalar(monthly_budget_limit) * 100
+              ) > 90
+            for: 0s
+            labels:
+              severity: critical
+              alert_type: budget
+            annotations:
+              summary: "Monthly budget 90% exceeded"
+              description: "Current spend is {{ $value | humanizePercentage }} of monthly budget"
+
+          # Spot instance savings alerts
+          - alert: LowSpotInstanceUsage
+            expr: |
+              (
+                sum(node_spot_instance_count) /
+                (sum(node_spot_instance_count) + sum(node_on_demand_instance_count))
+              ) < 0.3
+            for: 30m
+            labels:
+              severity: info
+              alert_type: optimization
+            annotations:
+              summary: "Low spot instance utilization"
+              description: "Only {{ $value | humanizePercentage }} of instances are spot instances"
+
+---
+# Cost Alert Manager Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: alertmanager-cost-config
+  namespace: monitoring
+data:
+  alertmanager.yml: |
+    global:
+      smtp_smarthost: 'localhost:587'
+      smtp_from: 'alerts@company.com'
+      slack_api_url: 'YOUR_SLACK_WEBHOOK_URL'
+
+    route:
+      group_by: ['alertname', 'cloud_provider']
+      group_wait: 5m
+      group_interval: 10m
+      repeat_interval: 12h
+      receiver: 'cost-alerts'
+      routes:
+        - match:
+            alert_type: cost_anomaly
+          receiver: 'critical-cost-alerts'
+          continue: true
+        - match:
+            alert_type: budget
+          receiver: 'budget-alerts'
+          continue: true
+        - match:
+            alert_type: optimization
+          receiver: 'optimization-alerts'
+          repeat_interval: 24h
+
+    receivers:
+      - name: 'cost-alerts'
+        slack_configs:
+          - channel: '#cost-alerts'
+            username: 'Cost Monitor'
+            title: 'Cost Alert: {{ range .Alerts }}{{ .Annotations.summary }}{{ end }}'
+            text: |
+              {{ range .Alerts }}
+              *Alert:* {{ .Annotations.summary }}
+              *Description:* {{ .Annotations.description }}
+              *Cloud:* {{ .Labels.cloud_provider }}
+              *Severity:* {{ .Labels.severity }}
+              {{ if .Annotations.runbook_url }}*Runbook:* {{ .Annotations.runbook_url }}{{ end }}
+              {{ end }}
+
+      - name: 'critical-cost-alerts'
+        email_configs:
+          - to: 'finance@company.com,devops@company.com'
+            subject: 'CRITICAL: {{ .GroupLabels.alertname }} - Cost Anomaly Detected'
+            body: |
+              Critical cost anomaly detected!
+              
+              {{ range .Alerts }}
+              Alert: {{ .Annotations.summary }}
+              Description: {{ .Annotations.description }}
+              Cloud Provider: {{ .Labels.cloud_provider }}
+              Time: {{ .StartsAt.Format "2006-01-02 15:04:05 UTC" }}
+              {{ end }}
+
+        slack_configs:
+          - channel: '#critical-alerts'
+            username: 'Critical Cost Alert'
+            title: 'CRITICAL COST ALERT'
+            color: 'danger'
+
+      - name: 'budget-alerts'
+        email_configs:
+          - to: 'finance@company.com,management@company.com'
+            subject: 'Budget Alert: {{ .GroupLabels.alertname }}'
+
+      - name: 'optimization-alerts'
+        slack_configs:
+          - channel: '#cost-optimization'
+            username: 'Cost Optimizer'
+            title: 'Cost Optimization Opportunity'
+            color: 'warning'
+
+---
+# Cost Metrics Exporter for AWS
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: aws-cost-exporter
+  namespace: monitoring
+  labels:
+    app: aws-cost-exporter
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: aws-cost-exporter
+  template:
+    metadata:
+      labels:
+        app: aws-cost-exporter
+    spec:
+      containers:
+        - name: aws-cost-exporter
+          image: quay.io/prometheus/cloudwatch-exporter:cloudwatch_exporter-0.15.0
+          ports:
+            - containerPort: 9106
+          env:
+            - name: AWS_REGION
+              value: "us-east-1"
+            - name: AWS_ACCESS_KEY_ID
+              valueFrom:
+                secretKeyRef:
+                  name: aws-credentials
+                  key: access-key-id
+            - name: AWS_SECRET_ACCESS_KEY
+              valueFrom:
+                secretKeyRef:
+                  name: aws-credentials
+                  key: secret-access-key
+          volumeMounts:
+            - name: config
+              mountPath: /config
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+      volumes:
+        - name: config
+          configMap:
+            name: aws-cost-exporter-config
+
+---
+# AWS Cost Exporter Configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aws-cost-exporter-config
+  namespace: monitoring
+data:
+  config.yml: |
+    region: us-east-1
+    period_seconds: 300
+    delay_seconds: 300
+    metrics:
+      - aws_namespace: AWS/Billing
+        aws_metric_name: EstimatedCharges
+        aws_dimensions: [Currency]
+        aws_statistics: [Maximum]
+      - aws_namespace: AWS/CostExplorer  
+        aws_metric_name: BlendedCost
+        aws_dimensions: [Service]
+        aws_statistics: [Sum]

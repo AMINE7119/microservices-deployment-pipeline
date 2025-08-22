@@ -1,0 +1,488 @@
+# K6 Performance Testing Deployment
+# Automated performance testing with cost analysis
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k6-test-config
+  namespace: monitoring
+data:
+  k6-performance-tests.js: |
+    // This will be mounted from the actual test file
+    // See the volume mount configuration below
+  
+  test-config.json: |
+    {
+      "scenarios": {
+        "baseline": {
+          "executor": "constant-vus",
+          "vus": 10,
+          "duration": "5m"
+        },
+        "load_test": {
+          "executor": "ramping-vus",
+          "startVUs": 0,
+          "stages": [
+            {"duration": "2m", "target": 50},
+            {"duration": "5m", "target": 50},
+            {"duration": "2m", "target": 0}
+          ]
+        }
+      },
+      "thresholds": {
+        "http_req_duration": ["p(95)<500"],
+        "http_req_failed": ["rate<0.01"]
+      }
+    }
+
+---
+# K6 Performance Testing Job
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: k6-performance-test
+  namespace: monitoring
+  labels:
+    app: k6-performance-test
+spec:
+  template:
+    metadata:
+      labels:
+        app: k6-performance-test
+    spec:
+      restartPolicy: Never
+      containers:
+        - name: k6
+          image: grafana/k6:0.47.0
+          command:
+            - k6
+            - run
+            - --out
+            - prometheus=http://prometheus-pushgateway.monitoring.svc.cluster.local:9091
+            - --out
+            - json=/shared/results.json
+            - --out
+            - csv=/shared/results.csv
+            - /scripts/k6-performance-tests.js
+          env:
+            - name: BASE_URL
+              value: "http://api-gateway.microservices.svc.cluster.local:8080"
+            - name: PROMETHEUS_URL
+              value: "http://prometheus.monitoring.svc.cluster.local:9090"
+            - name: K6_PROMETHEUS_RW_SERVER_URL
+              value: "http://prometheus.monitoring.svc.cluster.local:9090/api/v1/write"
+            - name: K6_PROMETHEUS_RW_TREND_AS_NATIVE_HISTOGRAM
+              value: "true"
+          resources:
+            requests:
+              cpu: 500m
+              memory: 512Mi
+            limits:
+              cpu: 2000m
+              memory: 2Gi
+          volumeMounts:
+            - name: test-scripts
+              mountPath: /scripts
+            - name: test-results
+              mountPath: /shared
+        
+        # Results processor container
+        - name: results-processor
+          image: python:3.11-slim
+          command:
+            - python
+            - -c
+            - |
+              import json
+              import time
+              import csv
+              import requests
+              import os
+              from datetime import datetime
+              
+              print("Waiting for K6 test to complete...")
+              
+              # Wait for results file
+              results_file = "/shared/results.json"
+              timeout = 3600  # 1 hour timeout
+              start_time = time.time()
+              
+              while not os.path.exists(results_file) and (time.time() - start_time) < timeout:
+                  time.sleep(10)
+              
+              if not os.path.exists(results_file):
+                  print("Results file not found within timeout")
+                  exit(1)
+              
+              print("Processing K6 test results...")
+              
+              # Read and process results
+              with open(results_file, 'r') as f:
+                  lines = f.readlines()
+              
+              # Parse JSON lines
+              metrics = {}
+              for line in lines:
+                  try:
+                      data = json.loads(line.strip())
+                      if data.get('type') == 'Point':
+                          metric_name = data.get('metric')
+                          value = data.get('data', {}).get('value')
+                          if metric_name and value is not None:
+                              if metric_name not in metrics:
+                                  metrics[metric_name] = []
+                              metrics[metric_name].append(value)
+                  except json.JSONDecodeError:
+                      continue
+              
+              # Calculate summary statistics
+              summary = {}
+              for metric, values in metrics.items():
+                  if values:
+                      summary[metric] = {
+                          'count': len(values),
+                          'avg': sum(values) / len(values),
+                          'min': min(values),
+                          'max': max(values)
+                      }
+              
+              # Generate cost analysis report
+              report = {
+                  'timestamp': datetime.utcnow().isoformat(),
+                  'test_duration': time.time() - start_time,
+                  'metrics_summary': summary,
+                  'cost_analysis': {},
+                  'recommendations': []
+              }
+              
+              # Query Prometheus for cost metrics
+              try:
+                  prometheus_url = os.getenv('PROMETHEUS_URL', 'http://prometheus.monitoring.svc.cluster.local:9090')
+                  
+                  # Cost per request calculation
+                  cost_query = 'sum(increase(total_cost[1h]))'
+                  requests_query = 'sum(increase(http_requests_total[1h]))'
+                  
+                  cost_response = requests.get(f"{prometheus_url}/api/v1/query", 
+                                             params={'query': cost_query}, timeout=30)
+                  requests_response = requests.get(f"{prometheus_url}/api/v1/query", 
+                                                 params={'query': requests_query}, timeout=30)
+                  
+                  if cost_response.status_code == 200 and requests_response.status_code == 200:
+                      cost_data = cost_response.json()
+                      requests_data = requests_response.json()
+                      
+                      if (cost_data['data']['result'] and requests_data['data']['result']):
+                          total_cost = float(cost_data['data']['result'][0]['value'][1])
+                          total_requests = float(requests_data['data']['result'][0]['value'][1])
+                          
+                          if total_requests > 0:
+                              cost_per_request = total_cost / total_requests
+                              report['cost_analysis']['cost_per_request'] = cost_per_request
+                              
+                              if cost_per_request > 0.001:
+                                  report['recommendations'].append(
+                                      f"Cost per request (${cost_per_request:.6f}) is high. Consider optimizing resources."
+                                  )
+                  
+                  # Resource utilization analysis
+                  cpu_query = 'avg(rate(container_cpu_usage_seconds_total[1h])) / avg(container_spec_cpu_quota / container_spec_cpu_period)'
+                  memory_query = 'avg(container_memory_working_set_bytes) / avg(container_spec_memory_limit_bytes)'
+                  
+                  cpu_response = requests.get(f"{prometheus_url}/api/v1/query", 
+                                            params={'query': cpu_query}, timeout=30)
+                  memory_response = requests.get(f"{prometheus_url}/api/v1/query", 
+                                               params={'query': memory_query}, timeout=30)
+                  
+                  if cpu_response.status_code == 200 and memory_response.status_code == 200:
+                      cpu_data = cpu_response.json()
+                      memory_data = memory_response.json()
+                      
+                      if cpu_data['data']['result']:
+                          cpu_utilization = float(cpu_data['data']['result'][0]['value'][1])
+                          report['cost_analysis']['cpu_utilization'] = cpu_utilization
+                          
+                          if cpu_utilization < 0.3:
+                              report['recommendations'].append(
+                                  f"CPU utilization ({cpu_utilization:.1%}) is low. Consider rightsizing."
+                              )
+                      
+                      if memory_data['data']['result']:
+                          memory_utilization = float(memory_data['data']['result'][0]['value'][1])
+                          report['cost_analysis']['memory_utilization'] = memory_utilization
+                          
+                          if memory_utilization < 0.3:
+                              report['recommendations'].append(
+                                  f"Memory utilization ({memory_utilization:.1%}) is low. Consider rightsizing."
+                              )
+              
+              except Exception as e:
+                  print(f"Error querying Prometheus: {e}")
+                  report['cost_analysis']['error'] = str(e)
+              
+              # Performance recommendations
+              if 'http_req_duration' in summary:
+                  avg_response_time = summary['http_req_duration']['avg']
+                  if avg_response_time > 500:
+                      report['recommendations'].append(
+                          f"Average response time ({avg_response_time:.0f}ms) is high. Consider scaling or optimization."
+                      )
+              
+              if 'http_req_failed' in summary:
+                  error_rate = summary['http_req_failed']['avg']
+                  if error_rate > 0.01:
+                      report['recommendations'].append(
+                          f"Error rate ({error_rate:.2%}) is above threshold. Investigate causes."
+                      )
+              
+              # Save enhanced report
+              with open('/shared/cost-analysis-report.json', 'w') as f:
+                  json.dump(report, f, indent=2)
+              
+              print("Cost analysis report generated:")
+              print(json.dumps(report, indent=2))
+              
+              # Send results to monitoring system (optional)
+              try:
+                  webhook_url = os.getenv('SLACK_WEBHOOK_URL')
+                  if webhook_url:
+                      slack_message = {
+                          'text': f"Performance Test Completed",
+                          'attachments': [{
+                              'color': 'good' if len(report['recommendations']) == 0 else 'warning',
+                              'fields': [
+                                  {'title': 'Test Duration', 'value': f"{report['test_duration']:.0f}s", 'short': True},
+                                  {'title': 'Recommendations', 'value': str(len(report['recommendations'])), 'short': True}
+                              ]
+                          }]
+                      }
+                      requests.post(webhook_url, json=slack_message, timeout=10)
+              except Exception as e:
+                  print(f"Failed to send Slack notification: {e}")
+              
+              print("Results processing complete!")
+          env:
+            - name: PROMETHEUS_URL
+              value: "http://prometheus.monitoring.svc.cluster.local:9090"
+            - name: SLACK_WEBHOOK_URL
+              valueFrom:
+                secretKeyRef:
+                  name: monitoring-secrets
+                  key: slack-webhook-url
+                  optional: true
+          resources:
+            requests:
+              cpu: 100m
+              memory: 128Mi
+            limits:
+              cpu: 500m
+              memory: 512Mi
+          volumeMounts:
+            - name: test-results
+              mountPath: /shared
+      
+      volumes:
+        - name: test-scripts
+          configMap:
+            name: k6-test-scripts
+        - name: test-results
+          emptyDir: {}
+
+---
+# K6 Test Scripts ConfigMap
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: k6-test-scripts
+  namespace: monitoring
+data:
+  k6-performance-tests.js: |
+    // Main K6 performance test script
+    // This is a placeholder - actual script content would be injected
+    import http from 'k6/http';
+    import { check, sleep } from 'k6';
+    
+    export let options = {
+      vus: 10,
+      duration: '30s',
+    };
+    
+    export default function () {
+      const response = http.get('http://api-gateway.microservices.svc.cluster.local:8080/health');
+      check(response, {
+        'status is 200': (r) => r.status === 200,
+      });
+      sleep(1);
+    }
+
+---
+# CronJob for Automated Performance Testing
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: scheduled-performance-tests
+  namespace: monitoring
+spec:
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  jobTemplate:
+    spec:
+      template:
+        metadata:
+          labels:
+            app: scheduled-k6-test
+        spec:
+          restartPolicy: OnFailure
+          containers:
+            - name: k6
+              image: grafana/k6:0.47.0
+              command:
+                - k6
+                - run
+                - --out
+                - prometheus=http://prometheus-pushgateway.monitoring.svc.cluster.local:9091
+                - --quiet
+                - /scripts/k6-performance-tests.js
+              env:
+                - name: BASE_URL
+                  value: "http://api-gateway.microservices.svc.cluster.local:8080"
+                - name: TEST_TYPE
+                  value: "scheduled"
+              resources:
+                requests:
+                  cpu: 200m
+                  memory: 256Mi
+                limits:
+                  cpu: 1000m
+                  memory: 1Gi
+              volumeMounts:
+                - name: test-scripts
+                  mountPath: /scripts
+          volumes:
+            - name: test-scripts
+              configMap:
+                name: k6-test-scripts
+
+---
+# Performance Test Results Service
+apiVersion: v1
+kind: Service
+metadata:
+  name: k6-results-api
+  namespace: monitoring
+spec:
+  selector:
+    app: k6-results-api
+  ports:
+    - port: 8080
+      targetPort: 8080
+  type: ClusterIP
+
+---
+# Performance Test Results API
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: k6-results-api
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: k6-results-api
+  template:
+    metadata:
+      labels:
+        app: k6-results-api
+    spec:
+      containers:
+        - name: results-api
+          image: python:3.11-slim
+          command:
+            - python
+            - -c
+            - |
+              from http.server import HTTPServer, BaseHTTPRequestHandler
+              import json
+              import os
+              import glob
+              from datetime import datetime
+              
+              class ResultsHandler(BaseHTTPRequestHandler):
+                  def do_GET(self):
+                      if self.path == '/':
+                          self.send_response(200)
+                          self.send_header('Content-type', 'text/html')
+                          self.end_headers()
+                          
+                          # Generate HTML dashboard
+                          html = """
+                          <!DOCTYPE html>
+                          <html>
+                          <head>
+                              <title>K6 Performance Test Results</title>
+                              <style>
+                                  body { font-family: Arial, sans-serif; margin: 40px; }
+                                  .test-result { border: 1px solid #ccc; margin: 20px 0; padding: 20px; }
+                                  .metric { margin: 10px 0; }
+                                  .recommendation { background: #fff3cd; padding: 10px; margin: 5px 0; }
+                              </style>
+                          </head>
+                          <body>
+                              <h1>Performance Test Results Dashboard</h1>
+                              <p>Recent performance test results and cost analysis</p>
+                              <div id="results">Loading...</div>
+                          </body>
+                          </html>
+                          """
+                          self.wfile.write(html.encode())
+                      
+                      elif self.path == '/api/results':
+                          self.send_response(200)
+                          self.send_header('Content-type', 'application/json')
+                          self.end_headers()
+                          
+                          # Return mock results for now
+                          results = {
+                              'tests': [],
+                              'summary': {
+                                  'total_tests': 0,
+                                  'avg_response_time': 0,
+                                  'cost_per_request': 0
+                              }
+                          }
+                          
+                          self.wfile.write(json.dumps(results).encode())
+                      
+                      else:
+                          self.send_response(404)
+                          self.end_headers()
+              
+              server = HTTPServer(('0.0.0.0', 8080), ResultsHandler)
+              print("Starting K6 Results API server on port 8080...")
+              server.serve_forever()
+          ports:
+            - containerPort: 8080
+          resources:
+            requests:
+              cpu: 50m
+              memory: 64Mi
+            limits:
+              cpu: 200m
+              memory: 256Mi
+
+---
+# ServiceMonitor for K6 metrics
+apiVersion: monitoring.coreos.com/v1
+kind: ServiceMonitor
+metadata:
+  name: k6-performance-tests
+  namespace: monitoring
+spec:
+  selector:
+    matchLabels:
+      app: k6-results-api
+  endpoints:
+    - port: http
+      interval: 30s
+      path: /metrics

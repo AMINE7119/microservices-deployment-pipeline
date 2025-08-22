@@ -1,0 +1,395 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "FinOps - Multi-Cloud Cost & Performance Dashboard",
+    "tags": ["finops", "cost", "optimization", "multi-cloud"],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 1,
+    "refresh": "1m",
+    "time": {
+      "from": "now-24h",
+      "to": "now"
+    },
+    "panels": [
+      {
+        "id": 1,
+        "gridPos": {"h": 6, "w": 8, "x": 0, "y": 0},
+        "type": "stat",
+        "title": "Total Daily Cost",
+        "targets": [
+          {
+            "expr": "sum(increase(total_cost[24h]))",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyUSD",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 500},
+                {"color": "red", "value": 1000}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "gridPos": {"h": 6, "w": 8, "x": 8, "y": 0},
+        "type": "stat",
+        "title": "Monthly Budget Usage",
+        "targets": [
+          {
+            "expr": "(sum(increase(total_cost[30d])) / scalar(monthly_budget_limit)) * 100",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "max": 100,
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 75},
+                {"color": "red", "value": 90}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 3,
+        "gridPos": {"h": 6, "w": 8, "x": 16, "y": 0},
+        "type": "stat",
+        "title": "Cost Savings (Spot Instances)",
+        "targets": [
+          {
+            "expr": "(1 - (sum(spot_instance_cost) / sum(on_demand_cost))) * 100",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "red", "value": null},
+                {"color": "yellow", "value": 20},
+                {"color": "green", "value": 40}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 4,
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 6},
+        "type": "graph",
+        "title": "Cost Trend by Cloud Provider",
+        "targets": [
+          {
+            "expr": "sum(increase(aws_cost_total[1h])) by (service)",
+            "legendFormat": "AWS - {{service}}",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(increase(gcp_cost_total[1h])) by (service)",
+            "legendFormat": "GCP - {{service}}",
+            "refId": "B"
+          }
+        ],
+        "yAxes": [
+          {
+            "format": "currencyUSD",
+            "label": "Hourly Cost"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 6},
+        "type": "piechart",
+        "title": "Cost Distribution by Service",
+        "targets": [
+          {
+            "expr": "sum(increase(service_cost_total[24h])) by (service)",
+            "refId": "A"
+          }
+        ],
+        "options": {
+          "displayLabels": ["name", "percent"]
+        }
+      },
+      {
+        "id": 6,
+        "gridPos": {"h": 6, "w": 24, "x": 0, "y": 14},
+        "type": "table",
+        "title": "Resource Utilization vs Cost Analysis",
+        "targets": [
+          {
+            "expr": "sum(increase(pod_cost_total[24h])) by (pod, namespace)",
+            "format": "table",
+            "refId": "A"
+          },
+          {
+            "expr": "avg_over_time((sum(rate(container_cpu_usage_seconds_total[5m])) by (pod) / sum(container_spec_cpu_quota / container_spec_cpu_period) by (pod))[24h:5m])",
+            "format": "table", 
+            "refId": "B"
+          },
+          {
+            "expr": "avg_over_time((sum(container_memory_working_set_bytes) by (pod) / sum(container_spec_memory_limit_bytes) by (pod))[24h:5m])",
+            "format": "table",
+            "refId": "C"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "merge",
+            "options": {
+              "reducers": []
+            }
+          },
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {
+                "Time": true
+              },
+              "indexByName": {
+                "pod": 0,
+                "namespace": 1,
+                "Value #A": 2,
+                "Value #B": 3,
+                "Value #C": 4
+              },
+              "renameByName": {
+                "Value #A": "Daily Cost ($)",
+                "Value #B": "CPU Utilization (%)",
+                "Value #C": "Memory Utilization (%)"
+              }
+            }
+          }
+        ],
+        "fieldConfig": {
+          "overrides": [
+            {
+              "matcher": {"id": "byName", "options": "Daily Cost ($)"},
+              "properties": [
+                {
+                  "id": "unit",
+                  "value": "currencyUSD"
+                },
+                {
+                  "id": "custom.displayMode",
+                  "value": "color-background"
+                }
+              ]
+            },
+            {
+              "matcher": {"id": "byRegexp", "options": ".*Utilization.*"},
+              "properties": [
+                {
+                  "id": "unit",
+                  "value": "percentunit"
+                },
+                {
+                  "id": "thresholds",
+                  "value": {
+                    "steps": [
+                      {"color": "red", "value": 0},
+                      {"color": "yellow", "value": 0.3},
+                      {"color": "green", "value": 0.6},
+                      {"color": "red", "value": 0.9}
+                    ]
+                  }
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": 7,
+        "gridPos": {"h": 8, "w": 12, "x": 0, "y": 20},
+        "type": "graph",
+        "title": "Cost Efficiency Metrics",
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total[5m])) / sum(increase(total_cost[1h]))",
+            "legendFormat": "Requests per $ (hourly)",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(increase(total_cost[1h])) / sum(increase(http_requests_total[1h]))",
+            "legendFormat": "Cost per Request",
+            "refId": "B"
+          }
+        ],
+        "yAxes": [
+          {
+            "format": "short",
+            "label": "Efficiency Ratio"
+          }
+        ]
+      },
+      {
+        "id": 8,
+        "gridPos": {"h": 8, "w": 12, "x": 12, "y": 20},
+        "type": "graph",
+        "title": "Rightsizing Recommendations",
+        "targets": [
+          {
+            "expr": "sum(rightsizing:cpu_overprovisioned)",
+            "legendFormat": "CPU Overprovisioned",
+            "refId": "A"
+          },
+          {
+            "expr": "sum(rightsizing:memory_overprovisioned)",
+            "legendFormat": "Memory Overprovisioned", 
+            "refId": "B"
+          },
+          {
+            "expr": "sum(rightsizing:cpu_underprovisioned)",
+            "legendFormat": "CPU Underprovisioned",
+            "refId": "C"
+          },
+          {
+            "expr": "sum(rightsizing:memory_underprovisioned)",
+            "legendFormat": "Memory Underprovisioned",
+            "refId": "D"
+          }
+        ],
+        "yAxes": [
+          {
+            "format": "short",
+            "label": "Pod Count"
+          }
+        ]
+      },
+      {
+        "id": 9,
+        "gridPos": {"h": 6, "w": 8, "x": 0, "y": 28},
+        "type": "stat",
+        "title": "Estimated Monthly Savings",
+        "targets": [
+          {
+            "expr": "sum(cost:unused_cpu_cost) + sum(cost:unused_memory_cost)",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyUSD",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "red", "value": null},
+                {"color": "yellow", "value": 100},
+                {"color": "green", "value": 500}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 10,
+        "gridPos": {"h": 6, "w": 8, "x": 8, "y": 28},
+        "type": "stat",
+        "title": "Average Cost per vCPU Hour",
+        "targets": [
+          {
+            "expr": "sum(increase(total_cost[1h])) / sum(container_spec_cpu_quota / container_spec_cpu_period)",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyUSD",
+            "decimals": 4
+          }
+        }
+      },
+      {
+        "id": 11,
+        "gridPos": {"h": 6, "w": 8, "x": 16, "y": 28},
+        "type": "stat",
+        "title": "Cost per GB Memory Hour",
+        "targets": [
+          {
+            "expr": "sum(increase(total_cost[1h])) / (sum(container_spec_memory_limit_bytes) / 1024 / 1024 / 1024)",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "currencyUSD", 
+            "decimals": 4
+          }
+        }
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "datasource",
+          "type": "datasource",
+          "query": "prometheus",
+          "current": {
+            "text": "Prometheus",
+            "value": "Prometheus"
+          }
+        },
+        {
+          "name": "cloud_provider",
+          "type": "query",
+          "datasource": "$datasource",
+          "query": "label_values(cloud_provider)",
+          "multi": true,
+          "includeAll": true
+        },
+        {
+          "name": "service",
+          "type": "query", 
+          "datasource": "$datasource",
+          "query": "label_values(service)",
+          "multi": true,
+          "includeAll": true
+        },
+        {
+          "name": "time_range",
+          "type": "interval",
+          "options": ["1h", "6h", "24h", "7d", "30d"],
+          "current": {
+            "text": "24h",
+            "value": "24h"
+          }
+        }
+      ]
+    },
+    "annotations": {
+      "list": [
+        {
+          "name": "Cost Alerts",
+          "datasource": "$datasource",
+          "expr": "ALERTS{alertname=~\".*Cost.*\"}",
+          "titleFormat": "{{alertname}}",
+          "textFormat": "{{annotations.description}}"
+        },
+        {
+          "name": "Scaling Events",
+          "datasource": "$datasource", 
+          "expr": "changes(kube_deployment_spec_replicas[5m])",
+          "titleFormat": "Scaling Event",
+          "textFormat": "{{deployment}} scaled"
+        }
+      ]
+    }
+  }
+}
