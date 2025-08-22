@@ -1,0 +1,20 @@
+# AWS Terraform Variables for Multi-Cloud Deployment
+# Copy this file to terraform.tfvars and customize for your environment
+
+# Basic Configuration
+aws_region = "us-east-1"
+environment = "production"
+cluster_name = "microservices-eks"
+
+# Networking
+# vpc_cidr will be set by the module defaults
+
+# Node Group Configuration (using defaults from module)
+# Defaults: desired_size=3, min_size=2, max_size=10, instance_types=["t3.medium"]
+
+# Spot Instances
+# enable_spot_instances = true (default)
+# spot_max_price = "0.05" (default)
+
+# Tags
+# Additional tags will be merged with default tags from module
