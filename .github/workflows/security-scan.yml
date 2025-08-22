@@ -112,7 +112,7 @@ jobs:
       
       - name: Setup Go (for Go service)
         if: matrix.scan-type == 'go'
-        uses: actions/setup-go@v4
+        uses: actions/setup-go@v5
         with:
           go-version: '1.21'
       
