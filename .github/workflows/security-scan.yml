@@ -1,5 +1,11 @@
 name: Security Scanning
 
+# Security: Limit GITHUB_TOKEN permissions to minimum required
+permissions:
+  contents: read
+  security-events: write
+  actions: read
+
 on:
   push:
     branches: [ main, develop ]

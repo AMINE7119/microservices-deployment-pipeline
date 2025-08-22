@@ -1,5 +1,13 @@
 name: Multi-Cloud Deployment Pipeline
 
+# Security: Limit GITHUB_TOKEN permissions to minimum required
+permissions:
+  contents: read
+  packages: write
+  security-events: write
+  actions: read
+  id-token: write
+
 on:
   push:
     branches:
