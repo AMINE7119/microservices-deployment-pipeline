@@ -1,0 +1,453 @@
+name: Multi-Cloud Deployment Pipeline
+
+# Security: Limit GITHUB_TOKEN permissions to minimum required
+permissions:
+  contents: read
+  packages: write
+  security-events: write
+  actions: read
+  id-token: write
+
+on:
+  push:
+    branches:
+      - main
+      - 'release/*'
+    paths:
+      - 'services/**'
+      - 'kubernetes/**'
+      - 'infrastructure/**'
+      - '.github/workflows/multi-cloud-deploy.yml'
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+    inputs:
+      target_cloud:
+        description: 'Target cloud provider (all/aws/gcp/edge)'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+          - all
+          - aws
+          - gcp
+          - edge
+      environment:
+        description: 'Target environment'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+          - development
+          - staging
+          - production
+
+env:
+  REGISTRY: ghcr.io
+  AWS_REGION: us-east-1
+  GCP_REGION: us-central1
+  TERRAFORM_VERSION: 1.5.0
+
+jobs:
+  # Build and push container images
+  build-images:
+    name: Build and Push Images
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        service:
+          - frontend
+          - api-gateway
+          - user-service
+          - product-service
+          - order-service
+    permissions:
+      contents: read
+      packages: write
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+      
+      - name: Log in to GitHub Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository }}/${{ matrix.service }}
+          tags: |
+            type=ref,event=branch
+            type=ref,event=pr
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=sha,prefix={{branch}}-
+            type=raw,value=latest,enable={{is_default_branch}}
+      
+      - name: Build and push Docker image
+        uses: docker/build-push-action@v5
+        with:
+          context: ./services/${{ matrix.service }}
+          platforms: linux/amd64,linux/arm64
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  # Security scanning
+  security-scan:
+    name: Security Scanning
+    needs: build-images
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Run Trivy vulnerability scanner
+        uses: aquasecurity/trivy-action@master
+        with:
+          scan-type: 'fs'
+          scan-ref: '.'
+          format: 'sarif'
+          output: 'trivy-results.sarif'
+      
+      - name: Upload Trivy results to GitHub Security
+        uses: github/codeql-action/upload-sarif@v2
+        with:
+          sarif_file: 'trivy-results.sarif'
+
+  # Deploy to AWS EKS
+  deploy-aws:
+    name: Deploy to AWS EKS
+    needs: [build-images, security-scan]
+    runs-on: ubuntu-latest
+    if: github.event.inputs.target_cloud == 'all' || github.event.inputs.target_cloud == 'aws'
+    environment:
+      name: aws-${{ github.event.inputs.environment || 'staging' }}
+      url: https://aws.microservices.example.com
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+      
+      - name: Terraform Init and Apply (AWS)
+        working-directory: ./infrastructure/terraform/environments/aws
+        run: |
+          terraform init
+          terraform plan -out=tfplan
+          terraform apply -auto-approve tfplan
+      
+      - name: Update kubeconfig
+        run: |
+          aws eks update-kubeconfig --region ${{ env.AWS_REGION }} --name microservices-eks
+      
+      - name: Deploy to EKS
+        run: |
+          kubectl apply -f kubernetes/base/ -n microservices
+          kubectl apply -f kubernetes/multi-cloud/aws/ -n microservices
+      
+      - name: Verify deployment
+        run: |
+          kubectl rollout status deployment --timeout=5m -n microservices
+          kubectl get pods -n microservices
+      
+      - name: Run smoke tests
+        run: |
+          ./scripts/test-deployment.sh aws
+
+  # Deploy to Google GKE
+  deploy-gcp:
+    name: Deploy to Google GKE
+    needs: [build-images, security-scan]
+    runs-on: ubuntu-latest
+    if: github.event.inputs.target_cloud == 'all' || github.event.inputs.target_cloud == 'gcp'
+    environment:
+      name: gcp-${{ github.event.inputs.environment || 'staging' }}
+      url: https://gcp.microservices.example.com
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+          export_default_credentials: true
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+      
+      - name: Terraform Init and Apply (GCP)
+        working-directory: ./infrastructure/terraform/environments/gcp
+        run: |
+          terraform init
+          terraform plan -out=tfplan
+          terraform apply -auto-approve tfplan
+      
+      - name: Get GKE credentials
+        run: |
+          gcloud container clusters get-credentials microservices-gke \
+            --region ${{ env.GCP_REGION }} \
+            --project ${{ secrets.GCP_PROJECT_ID }}
+      
+      - name: Deploy to GKE
+        run: |
+          kubectl apply -f kubernetes/base/ -n microservices
+          kubectl apply -f kubernetes/multi-cloud/gcp/ -n microservices
+      
+      - name: Verify deployment
+        run: |
+          kubectl rollout status deployment --timeout=5m -n microservices
+          kubectl get pods -n microservices
+      
+      - name: Run smoke tests
+        run: |
+          ./scripts/test-deployment.sh gcp
+
+  # Deploy Edge CDN
+  deploy-edge:
+    name: Deploy Edge CDN
+    needs: [deploy-aws, deploy-gcp]
+    runs-on: ubuntu-latest
+    if: github.event.inputs.target_cloud == 'all' || github.event.inputs.target_cloud == 'edge'
+    environment:
+      name: edge-${{ github.event.inputs.environment || 'staging' }}
+      url: https://cdn.microservices.example.com
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: us-east-1  # CloudFront requires us-east-1
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+      
+      - name: Deploy Edge Infrastructure
+        working-directory: ./infrastructure/terraform/modules/edge
+        run: |
+          terraform init
+          terraform plan -out=tfplan
+          terraform apply -auto-approve tfplan
+      
+      - name: Invalidate CloudFront cache
+        run: |
+          DISTRIBUTION_ID=$(terraform output -raw cloudfront_distribution_id)
+          aws cloudfront create-invalidation \
+            --distribution-id $DISTRIBUTION_ID \
+            --paths "/*"
+      
+      - name: Update static assets
+        run: |
+          aws s3 sync ./services/frontend/build s3://microservices-static-assets \
+            --delete \
+            --cache-control "public, max-age=31536000"
+
+  # Cross-cloud networking setup
+  setup-networking:
+    name: Setup Cross-Cloud Networking
+    needs: [deploy-aws, deploy-gcp]
+    runs-on: ubuntu-latest
+    if: github.event.inputs.target_cloud == 'all'
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Configure AWS credentials
+        uses: aws-actions/configure-aws-credentials@v4
+        with:
+          aws-access-key-id: ${{ secrets.AWS_ACCESS_KEY_ID }}
+          aws-secret-access-key: ${{ secrets.AWS_SECRET_ACCESS_KEY }}
+          aws-region: ${{ env.AWS_REGION }}
+      
+      - name: Setup Google Cloud SDK
+        uses: google-github-actions/setup-gcloud@v2
+        with:
+          service_account_key: ${{ secrets.GCP_SERVICE_ACCOUNT_KEY }}
+          project_id: ${{ secrets.GCP_PROJECT_ID }}
+      
+      - name: Setup Terraform
+        uses: hashicorp/setup-terraform@v3
+        with:
+          terraform_version: ${{ env.TERRAFORM_VERSION }}
+      
+      - name: Deploy Cross-Cloud Networking
+        working-directory: ./infrastructure/terraform/modules/networking
+        run: |
+          terraform init
+          terraform plan -out=tfplan
+          terraform apply -auto-approve tfplan
+      
+      - name: Test cross-cloud connectivity
+        run: |
+          ./scripts/test-cross-cloud.sh
+
+  # Integration tests
+  integration-tests:
+    name: Run Integration Tests
+    needs: [deploy-aws, deploy-gcp, deploy-edge]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'
+      
+      - name: Install dependencies
+        run: |
+          cd tests/integration
+          npm ci
+      
+      - name: Run multi-cloud tests
+        run: |
+          npm run test:multicloud
+        env:
+          AWS_ENDPOINT: ${{ secrets.AWS_ENDPOINT }}
+          GCP_ENDPOINT: ${{ secrets.GCP_ENDPOINT }}
+          CDN_ENDPOINT: ${{ secrets.CDN_ENDPOINT }}
+      
+      - name: Upload test results
+        if: always()
+        uses: actions/upload-artifact@v3
+        with:
+          name: test-results
+          path: tests/integration/results/
+
+  # Performance testing
+  performance-tests:
+    name: Performance Testing
+    needs: integration-tests
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Run performance tests
+        run: |
+          docker run --rm \
+            -v $PWD/tests/performance:/scripts \
+            loadimpact/k6 run /scripts/multi-cloud-load-test.js
+      
+      - name: Analyze results
+        run: |
+          ./scripts/analyze-performance.sh
+
+  # Monitoring setup
+  setup-monitoring:
+    name: Setup Multi-Cloud Monitoring
+    needs: [deploy-aws, deploy-gcp]
+    runs-on: ubuntu-latest
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Deploy Prometheus Federation
+        run: |
+          kubectl apply -f kubernetes/monitoring/prometheus-federation.yaml
+      
+      - name: Configure Grafana dashboards
+        run: |
+          ./scripts/setup-grafana-multicloud.sh
+      
+      - name: Setup alerts
+        run: |
+          kubectl apply -f kubernetes/monitoring/alerting-rules-multicloud.yaml
+
+  # Rollback on failure
+  rollback:
+    name: Rollback Deployment
+    needs: [integration-tests]
+    runs-on: ubuntu-latest
+    if: failure()
+    
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+      
+      - name: Rollback AWS
+        if: github.event.inputs.target_cloud == 'all' || github.event.inputs.target_cloud == 'aws'
+        run: |
+          ./scripts/rollback.sh aws
+      
+      - name: Rollback GCP
+        if: github.event.inputs.target_cloud == 'all' || github.event.inputs.target_cloud == 'gcp'
+        run: |
+          ./scripts/rollback.sh gcp
+      
+      - name: Notify team
+        uses: 8398a7/action-slack@v3
+        with:
+          status: ${{ job.status }}
+          text: 'Multi-cloud deployment rollback initiated'
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}
+
+  # Deployment summary
+  summary:
+    name: Deployment Summary
+    needs: [setup-monitoring, performance-tests]
+    runs-on: ubuntu-latest
+    if: success()
+    
+    steps:
+      - name: Generate deployment report
+        run: |
+          echo "## Multi-Cloud Deployment Summary" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Deployed to:" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ AWS EKS: https://aws.microservices.example.com" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Google GKE: https://gcp.microservices.example.com" >> $GITHUB_STEP_SUMMARY
+          echo "- ✅ Edge CDN: https://cdn.microservices.example.com" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### Monitoring:" >> $GITHUB_STEP_SUMMARY
+          echo "- 📊 Grafana: https://grafana.microservices.example.com" >> $GITHUB_STEP_SUMMARY
+          echo "- 📈 Prometheus: https://prometheus.microservices.example.com" >> $GITHUB_STEP_SUMMARY
+      
+      - name: Notify success
+        uses: 8398a7/action-slack@v3
+        with:
+          status: success
+          text: |
+            🎉 Multi-cloud deployment successful!
+            AWS: ✅ | GCP: ✅ | Edge: ✅
+          webhook_url: ${{ secrets.SLACK_WEBHOOK }}

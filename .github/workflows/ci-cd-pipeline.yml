@@ -1,5 +1,13 @@
 name: CI/CD Pipeline
 
+# Security: Limit GITHUB_TOKEN permissions to minimum required
+permissions:
+  contents: read
+  packages: write
+  security-events: write
+  actions: read
+  checks: write
+
 on:
   push:
     branches: [ main, develop ]

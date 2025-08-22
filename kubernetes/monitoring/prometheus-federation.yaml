@@ -1,0 +1,381 @@
+# Prometheus Federation for Multi-Cloud Monitoring
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-federation-config
+  namespace: monitoring
+data:
+  prometheus.yml: |
+    global:
+      scrape_interval: 15s
+      evaluation_interval: 15s
+      external_labels:
+        cluster: 'global-federation'
+        prometheus: 'federation'
+
+    # Alertmanager configuration
+    alerting:
+      alertmanagers:
+        - static_configs:
+            - targets:
+                - alertmanager:9093
+
+    # Load rules once and periodically evaluate them
+    rule_files:
+      - '/etc/prometheus/rules/*.yml'
+
+    # Federation configuration - scrape from regional Prometheus instances
+    scrape_configs:
+      # Scrape AWS EKS Prometheus
+      - job_name: 'federate-aws'
+        scrape_interval: 30s
+        honor_labels: true
+        metrics_path: '/federate'
+        params:
+          'match[]':
+            - '{job=~".*"}'
+            - up
+            - process_start_time_seconds
+        static_configs:
+          - targets:
+              - 'prometheus-aws.monitoring.svc.cluster.local:9090'
+            labels:
+              cloud_provider: 'aws'
+              region: 'us-east-1'
+              cluster_type: 'eks'
+
+      # Scrape GCP GKE Prometheus
+      - job_name: 'federate-gcp'
+        scrape_interval: 30s
+        honor_labels: true
+        metrics_path: '/federate'
+        params:
+          'match[]':
+            - '{job=~".*"}'
+            - up
+            - process_start_time_seconds
+        static_configs:
+          - targets:
+              - 'prometheus-gcp.monitoring.svc.cluster.local:9090'
+            labels:
+              cloud_provider: 'gcp'
+              region: 'us-central1'
+              cluster_type: 'gke'
+
+      # Scrape Azure AKS Prometheus (if deployed)
+      - job_name: 'federate-azure'
+        scrape_interval: 30s
+        honor_labels: true
+        metrics_path: '/federate'
+        params:
+          'match[]':
+            - '{job=~".*"}'
+            - up
+            - process_start_time_seconds
+        static_configs:
+          - targets:
+              - 'prometheus-azure.monitoring.svc.cluster.local:9090'
+            labels:
+              cloud_provider: 'azure'
+              region: 'eastus'
+              cluster_type: 'aks'
+
+      # Scrape Edge CDN metrics
+      - job_name: 'cloudfront-metrics'
+        scrape_interval: 60s
+        static_configs:
+          - targets:
+              - 'cloudwatch-exporter:9106'
+            labels:
+              service: 'cloudfront'
+              type: 'edge'
+
+      # Scrape global load balancer metrics
+      - job_name: 'global-lb-metrics'
+        scrape_interval: 30s
+        static_configs:
+          - targets:
+              - 'lb-metrics-exporter:9107'
+            labels:
+              service: 'global-lb'
+              type: 'networking'
+
+      # Scrape cross-cloud VPN metrics
+      - job_name: 'vpn-metrics'
+        scrape_interval: 60s
+        static_configs:
+          - targets:
+              - 'vpn-exporter-aws:9108'
+              - 'vpn-exporter-gcp:9109'
+            labels:
+              service: 'vpn'
+              type: 'networking'
+
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: prometheus-federation
+  namespace: monitoring
+  labels:
+    app: prometheus-federation
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: prometheus-federation
+  template:
+    metadata:
+      labels:
+        app: prometheus-federation
+    spec:
+      serviceAccountName: prometheus
+      containers:
+        - name: prometheus
+          image: prom/prometheus:v2.45.0
+          args:
+            - '--config.file=/etc/prometheus/prometheus.yml'
+            - '--storage.tsdb.path=/prometheus/'
+            - '--web.console.libraries=/etc/prometheus/console_libraries'
+            - '--web.console.templates=/etc/prometheus/consoles'
+            - '--web.enable-lifecycle'
+            - '--storage.tsdb.retention.time=30d'
+            - '--storage.tsdb.retention.size=50GB'
+          ports:
+            - name: web
+              containerPort: 9090
+          resources:
+            requests:
+              cpu: 500m
+              memory: 2Gi
+            limits:
+              cpu: 2000m
+              memory: 4Gi
+          volumeMounts:
+            - name: config
+              mountPath: /etc/prometheus
+            - name: rules
+              mountPath: /etc/prometheus/rules
+            - name: storage
+              mountPath: /prometheus
+          livenessProbe:
+            httpGet:
+              path: /-/healthy
+              port: web
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /-/ready
+              port: web
+            initialDelaySeconds: 5
+            periodSeconds: 5
+      volumes:
+        - name: config
+          configMap:
+            name: prometheus-federation-config
+        - name: rules
+          configMap:
+            name: prometheus-federation-rules
+        - name: storage
+          persistentVolumeClaim:
+            claimName: prometheus-federation-storage
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: prometheus-federation
+  namespace: monitoring
+  labels:
+    app: prometheus-federation
+spec:
+  type: ClusterIP
+  ports:
+    - port: 9090
+      targetPort: web
+      name: web
+  selector:
+    app: prometheus-federation
+
+---
+apiVersion: v1
+kind: PersistentVolumeClaim
+metadata:
+  name: prometheus-federation-storage
+  namespace: monitoring
+spec:
+  accessModes:
+    - ReadWriteOnce
+  resources:
+    requests:
+      storage: 100Gi
+  storageClassName: fast-ssd
+
+---
+# Recording rules for multi-cloud metrics
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: prometheus-federation-rules
+  namespace: monitoring
+data:
+  multicloud.yml: |
+    groups:
+      - name: multicloud_aggregations
+        interval: 30s
+        rules:
+          # Global request rate across all clouds
+          - record: global:http_requests:rate5m
+            expr: |
+              sum by (service, method, status_code) (
+                rate(http_requests_total[5m])
+              )
+
+          # Global error rate
+          - record: global:error_rate:ratio
+            expr: |
+              sum by (service) (
+                rate(http_requests_total{status_code=~"5.."}[5m])
+              ) / sum by (service) (
+                rate(http_requests_total[5m])
+              )
+
+          # Cross-cloud latency
+          - record: global:request_duration:p95
+            expr: |
+              histogram_quantile(0.95,
+                sum by (service, cloud_provider, le) (
+                  rate(http_request_duration_seconds_bucket[5m])
+                )
+              )
+
+          # Cloud provider availability
+          - record: cloud:availability:percentage
+            expr: |
+              avg by (cloud_provider) (
+                up{job=~"federate-.*"}
+              ) * 100
+
+          # Global service availability
+          - record: global:service_availability:percentage
+            expr: |
+              count by (service) (
+                up{job=~".*-service"} == 1
+              ) / count by (service) (
+                up{job=~".*-service"}
+              ) * 100
+
+          # Cross-cloud traffic distribution
+          - record: cloud:traffic_distribution:ratio
+            expr: |
+              sum by (cloud_provider) (
+                rate(http_requests_total[5m])
+              ) / ignoring(cloud_provider) group_left
+              sum(rate(http_requests_total[5m]))
+
+          # Edge cache hit ratio
+          - record: edge:cache_hit_ratio
+            expr: |
+              sum(rate(cloudfront_cache_hits_total[5m])) /
+              sum(rate(cloudfront_requests_total[5m]))
+
+          # VPN tunnel status
+          - record: vpn:tunnel_status
+            expr: |
+              min by (tunnel_name, source_cloud, dest_cloud) (
+                vpn_tunnel_up
+              )
+
+      - name: multicloud_slos
+        interval: 30s
+        rules:
+          # Global SLO - 99.9% availability
+          - record: slo:global_availability:ratio
+            expr: |
+              sum(rate(http_requests_total{status_code!~"5.."}[30d])) /
+              sum(rate(http_requests_total[30d]))
+
+          # Global SLO - P95 latency < 500ms
+          - record: slo:global_latency:compliance
+            expr: |
+              histogram_quantile(0.95,
+                sum(rate(http_request_duration_seconds_bucket[30d]))
+              ) < 0.5
+
+          # Per-cloud SLO compliance
+          - record: slo:cloud_compliance:percentage
+            expr: |
+              avg by (cloud_provider) (
+                (
+                  sum by (cloud_provider) (
+                    rate(http_requests_total{status_code!~"5.."}[24h])
+                  ) / sum by (cloud_provider) (
+                    rate(http_requests_total[24h])
+                  )
+                ) >= 0.999
+              ) * 100
+
+---
+# CloudWatch Exporter for AWS metrics
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: cloudwatch-exporter
+  namespace: monitoring
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: cloudwatch-exporter
+  template:
+    metadata:
+      labels:
+        app: cloudwatch-exporter
+    spec:
+      containers:
+        - name: cloudwatch-exporter
+          image: prom/cloudwatch-exporter:v0.15.0
+          ports:
+            - containerPort: 9106
+          volumeMounts:
+            - name: config
+              mountPath: /config
+          env:
+            - name: AWS_REGION
+              value: us-east-1
+      volumes:
+        - name: config
+          configMap:
+            name: cloudwatch-exporter-config
+
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: cloudwatch-exporter-config
+  namespace: monitoring
+data:
+  config.yml: |
+    region: us-east-1
+    metrics:
+      - aws_namespace: AWS/CloudFront
+        aws_metric_name: Requests
+        aws_dimensions: [DistributionId]
+        aws_statistics: [Sum]
+      - aws_namespace: AWS/CloudFront
+        aws_metric_name: BytesDownloaded
+        aws_dimensions: [DistributionId]
+        aws_statistics: [Sum]
+      - aws_namespace: AWS/CloudFront
+        aws_metric_name: CacheHitRate
+        aws_dimensions: [DistributionId]
+        aws_statistics: [Average]
+      - aws_namespace: AWS/EKS
+        aws_metric_name: cluster_node_count
+        aws_dimensions: [ClusterName]
+        aws_statistics: [Average]
+      - aws_namespace: AWS/VPN
+        aws_metric_name: TunnelState
+        aws_dimensions: [VpnId]
+        aws_statistics: [Maximum]

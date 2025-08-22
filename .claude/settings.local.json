@@ -7,7 +7,11 @@
       "Bash(kubectl get:*)",
       "Bash(docker pull:*)",
       "Bash(docker build:*)",
-      "Bash(docker push:*)"
+      "Bash(docker push:*)",
+      "Bash(zip:*)",
+      "Bash(cp:*)",
+      "Bash(python3:*)",
+      "Bash(touch:*)"
     ],
     "deny": []
   }

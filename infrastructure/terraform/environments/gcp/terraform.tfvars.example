@@ -1,0 +1,18 @@
+# GCP Terraform Variables for Multi-Cloud Deployment
+# Copy this file to terraform.tfvars and customize for your environment
+
+# Basic Configuration
+project_id = "your-gcp-project-id"
+gcp_region = "us-central1"
+environment = "production"
+cluster_name = "microservices-gke"
+
+# Networking (using defaults from module)
+# network_name = "microservices-network"
+# subnet_cidr = "10.1.0.0/20"
+# pods_ipv4_cidr_block = "10.2.0.0/16"
+# services_ipv4_cidr_block = "10.3.0.0/16"
+
+# Node Pool Configuration (using defaults from module)
+# Default pool: e2-standard-4, min=2, max=10, initial=3
+# Spot pool: preemptible=true, min=0, max=20, initial=2

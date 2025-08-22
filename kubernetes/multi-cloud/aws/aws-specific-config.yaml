@@ -1,0 +1,106 @@
+# AWS-specific configurations for EKS
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: aws-cloud-config
+  namespace: microservices
+data:
+  cloud_provider: "aws"
+  region: "us-east-1"
+  cluster_type: "eks"
+  load_balancer_class: "service.k8s.aws/nlb"
+
+---
+# AWS Load Balancer Controller ServiceAccount
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: aws-load-balancer-controller
+  namespace: kube-system
+  annotations:
+    eks.amazonaws.com/role-arn: "arn:aws:iam::ACCOUNT-ID:role/AmazonEKSLoadBalancerControllerRole"
+
+---
+# Ingress with AWS ALB annotations
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: microservices-ingress-aws
+  namespace: microservices
+  annotations:
+    kubernetes.io/ingress.class: "alb"
+    alb.ingress.kubernetes.io/scheme: internet-facing
+    alb.ingress.kubernetes.io/target-type: ip
+    alb.ingress.kubernetes.io/load-balancer-name: microservices-alb
+    alb.ingress.kubernetes.io/listen-ports: '[{"HTTP": 80}, {"HTTPS": 443}]'
+    alb.ingress.kubernetes.io/ssl-redirect: '443'
+    alb.ingress.kubernetes.io/certificate-arn: "arn:aws:acm:us-east-1:ACCOUNT-ID:certificate/CERT-ID"
+    alb.ingress.kubernetes.io/backend-protocol: HTTP
+    alb.ingress.kubernetes.io/healthcheck-path: /health
+    alb.ingress.kubernetes.io/success-codes: '200'
+    alb.ingress.kubernetes.io/tags: Environment=production,Cloud=aws
+spec:
+  rules:
+    - host: aws.microservices.example.com
+      http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: frontend
+                port:
+                  number: 3000
+          - path: /api
+            pathType: Prefix
+            backend:
+              service:
+                name: api-gateway
+                port:
+                  number: 8080
+
+---
+# AWS-specific resource limits
+apiVersion: v1
+kind: LimitRange
+metadata:
+  name: aws-resource-limits
+  namespace: microservices
+spec:
+  limits:
+    - default:
+        cpu: "500m"
+        memory: "512Mi"
+      defaultRequest:
+        cpu: "100m"
+        memory: "128Mi"
+      type: Container
+
+---
+# AWS CloudWatch logging configuration
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: fluent-bit-config
+  namespace: amazon-cloudwatch
+data:
+  fluent-bit.conf: |
+    [SERVICE]
+        Flush                     5
+        Log_Level                 info
+        Daemon                    off
+        Parsers_File             parsers.conf
+
+    [INPUT]
+        Name                      tail
+        Path                      /var/log/containers/*.log
+        Parser                    docker
+        Tag                       kube.*
+        Refresh_Interval          30
+
+    [OUTPUT]
+        Name                      cloudwatch_logs
+        Match                     kube.*
+        region                    us-east-1
+        log_group_name            /aws/eks/microservices/cluster
+        auto_create_group         true

@@ -1,0 +1,445 @@
+{
+  "dashboard": {
+    "id": null,
+    "title": "Multi-Cloud Infrastructure Overview",
+    "tags": ["multi-cloud", "overview", "federation"],
+    "timezone": "browser",
+    "schemaVersion": 16,
+    "version": 1,
+    "refresh": "30s",
+    "panels": [
+      {
+        "id": 1,
+        "gridPos": {"h": 4, "w": 8, "x": 0, "y": 0},
+        "type": "stat",
+        "title": "Global Service Availability",
+        "targets": [
+          {
+            "expr": "avg(global:service_availability:percentage)",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "red", "value": null},
+                {"color": "yellow", "value": 95},
+                {"color": "green", "value": 99}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 2,
+        "gridPos": {"h": 4, "w": 8, "x": 8, "y": 0},
+        "type": "stat",
+        "title": "Global Request Rate",
+        "targets": [
+          {
+            "expr": "sum(rate(http_requests_total[5m]))",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "reqps",
+            "decimals": 2
+          }
+        }
+      },
+      {
+        "id": 3,
+        "gridPos": {"h": 4, "w": 8, "x": 16, "y": 0},
+        "type": "stat",
+        "title": "Global Error Rate",
+        "targets": [
+          {
+            "expr": "avg(global:error_rate:ratio) * 100",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "green", "value": null},
+                {"color": "yellow", "value": 1},
+                {"color": "red", "value": 5}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 4,
+        "gridPos": {"h": 6, "w": 12, "x": 0, "y": 4},
+        "type": "graph",
+        "title": "Traffic Distribution by Cloud Provider",
+        "targets": [
+          {
+            "expr": "cloud:traffic_distribution:ratio * 100",
+            "legendFormat": "{{cloud_provider}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "percent",
+            "label": "Traffic %"
+          },
+          {
+            "format": "short"
+          }
+        ]
+      },
+      {
+        "id": 5,
+        "gridPos": {"h": 6, "w": 12, "x": 12, "y": 4},
+        "type": "graph",
+        "title": "Cross-Cloud Latency (P95)",
+        "targets": [
+          {
+            "expr": "global:request_duration:p95 * 1000",
+            "legendFormat": "{{service}} - {{cloud_provider}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "ms",
+            "label": "Latency"
+          },
+          {
+            "format": "short"
+          }
+        ],
+        "alert": {
+          "conditions": [
+            {
+              "evaluator": {
+                "params": [500],
+                "type": "gt"
+              },
+              "query": {
+                "params": ["A", "5m", "now"]
+              },
+              "reducer": {
+                "params": [],
+                "type": "avg"
+              },
+              "type": "query"
+            }
+          ],
+          "executionErrorState": "alerting",
+          "frequency": "60s",
+          "handler": 1,
+          "name": "High Cross-Cloud Latency",
+          "noDataState": "no_data",
+          "notifications": []
+        }
+      },
+      {
+        "id": 6,
+        "gridPos": {"h": 4, "w": 6, "x": 0, "y": 10},
+        "type": "stat",
+        "title": "AWS EKS Status",
+        "targets": [
+          {
+            "expr": "cloud:availability:percentage{cloud_provider=\"aws\"}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "mappings": [
+              {
+                "type": "range",
+                "options": {
+                  "from": 0,
+                  "to": 50,
+                  "result": {
+                    "text": "Down",
+                    "color": "red"
+                  }
+                }
+              },
+              {
+                "type": "range",
+                "options": {
+                  "from": 50,
+                  "to": 100,
+                  "result": {
+                    "text": "Healthy",
+                    "color": "green"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": 7,
+        "gridPos": {"h": 4, "w": 6, "x": 6, "y": 10},
+        "type": "stat",
+        "title": "GCP GKE Status",
+        "targets": [
+          {
+            "expr": "cloud:availability:percentage{cloud_provider=\"gcp\"}",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "mappings": [
+              {
+                "type": "range",
+                "options": {
+                  "from": 0,
+                  "to": 50,
+                  "result": {
+                    "text": "Down",
+                    "color": "red"
+                  }
+                }
+              },
+              {
+                "type": "range",
+                "options": {
+                  "from": 50,
+                  "to": 100,
+                  "result": {
+                    "text": "Healthy",
+                    "color": "green"
+                  }
+                }
+              }
+            ]
+          }
+        }
+      },
+      {
+        "id": 8,
+        "gridPos": {"h": 4, "w": 6, "x": 12, "y": 10},
+        "type": "stat",
+        "title": "Edge Cache Hit Ratio",
+        "targets": [
+          {
+            "expr": "edge:cache_hit_ratio * 100",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "percent",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "red", "value": null},
+                {"color": "yellow", "value": 70},
+                {"color": "green", "value": 90}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 9,
+        "gridPos": {"h": 4, "w": 6, "x": 18, "y": 10},
+        "type": "stat",
+        "title": "VPN Tunnels Active",
+        "targets": [
+          {
+            "expr": "sum(vpn:tunnel_status)",
+            "refId": "A"
+          }
+        ],
+        "fieldConfig": {
+          "defaults": {
+            "unit": "short",
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {"color": "red", "value": 0},
+                {"color": "yellow", "value": 1},
+                {"color": "green", "value": 2}
+              ]
+            }
+          }
+        }
+      },
+      {
+        "id": 10,
+        "gridPos": {"h": 6, "w": 24, "x": 0, "y": 14},
+        "type": "table",
+        "title": "Service Health by Cloud Provider",
+        "targets": [
+          {
+            "expr": "up{job=~\".*-service\"}",
+            "format": "table",
+            "instant": true,
+            "refId": "A"
+          }
+        ],
+        "transformations": [
+          {
+            "id": "organize",
+            "options": {
+              "excludeByName": {
+                "Time": true,
+                "__name__": true
+              },
+              "indexByName": {
+                "cloud_provider": 0,
+                "service": 1,
+                "instance": 2,
+                "Value": 3
+              },
+              "renameByName": {
+                "Value": "Status",
+                "cloud_provider": "Cloud",
+                "service": "Service",
+                "instance": "Instance"
+              }
+            }
+          }
+        ],
+        "fieldConfig": {
+          "overrides": [
+            {
+              "matcher": {"id": "byName", "options": "Status"},
+              "properties": [
+                {
+                  "id": "custom.displayMode",
+                  "value": "color-background"
+                },
+                {
+                  "id": "mappings",
+                  "value": [
+                    {
+                      "type": "value",
+                      "options": {
+                        "0": {
+                          "text": "Down",
+                          "color": "red"
+                        },
+                        "1": {
+                          "text": "Up",
+                          "color": "green"
+                        }
+                      }
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+      },
+      {
+        "id": 11,
+        "gridPos": {"h": 6, "w": 12, "x": 0, "y": 20},
+        "type": "graph",
+        "title": "SLO Compliance by Cloud",
+        "targets": [
+          {
+            "expr": "slo:cloud_compliance:percentage",
+            "legendFormat": "{{cloud_provider}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "percent",
+            "label": "SLO Compliance",
+            "min": 95,
+            "max": 100
+          },
+          {
+            "format": "short"
+          }
+        ],
+        "thresholds": [
+          {
+            "value": 99.9,
+            "op": "gt",
+            "fill": true,
+            "line": true,
+            "colorMode": "critical"
+          }
+        ]
+      },
+      {
+        "id": 12,
+        "gridPos": {"h": 6, "w": 12, "x": 12, "y": 20},
+        "type": "graph",
+        "title": "Cost per Request by Cloud",
+        "targets": [
+          {
+            "expr": "(sum by (cloud_provider) (increase(cloud_cost_total[1h]))) / (sum by (cloud_provider) (increase(http_requests_total[1h])))",
+            "legendFormat": "{{cloud_provider}}",
+            "refId": "A"
+          }
+        ],
+        "yaxes": [
+          {
+            "format": "currencyUSD",
+            "label": "Cost per Request"
+          },
+          {
+            "format": "short"
+          }
+        ]
+      }
+    ],
+    "templating": {
+      "list": [
+        {
+          "name": "datasource",
+          "type": "datasource",
+          "query": "prometheus",
+          "current": {
+            "text": "Prometheus-Federation",
+            "value": "Prometheus-Federation"
+          }
+        },
+        {
+          "name": "cloud_provider",
+          "type": "query",
+          "datasource": "$datasource",
+          "query": "label_values(cloud_provider)",
+          "multi": true,
+          "includeAll": true,
+          "current": {
+            "text": "All",
+            "value": "$__all"
+          }
+        },
+        {
+          "name": "service",
+          "type": "query",
+          "datasource": "$datasource",
+          "query": "label_values(service)",
+          "multi": true,
+          "includeAll": true,
+          "current": {
+            "text": "All",
+            "value": "$__all"
+          }
+        }
+      ]
+    },
+    "time": {
+      "from": "now-1h",
+      "to": "now"
+    }
+  }
+}

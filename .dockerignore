@@ -1,0 +1,98 @@
+# Docker ignore file for multi-cloud deployment
+# Prevents unnecessary files from being added to Docker build context
+
+# Git and version control
+.git
+.gitignore
+.gitattributes
+.gitmodules
+
+# Documentation
+*.md
+README*
+CHANGELOG*
+LICENSE*
+docs/
+documentation/
+
+# IDE and editor files
+.vscode/
+.idea/
+*.swp
+*.swo
+*~
+.DS_Store
+Thumbs.db
+
+# Build artifacts
+build/
+dist/
+target/
+*.egg-info/
+node_modules/
+coverage/
+.coverage
+.nyc_output
+.pytest_cache/
+
+# Environment and configuration files
+.env*
+!.env.example
+*.local
+.secrets
+
+# Test files
+tests/
+test/
+spec/
+__tests__/
+*.test.*
+*.spec.*
+
+# CI/CD files (except production configs)
+.github/
+.gitlab-ci.yml
+.travis.yml
+.circleci/
+azure-pipelines.yml
+Jenkinsfile
+
+# Infrastructure files
+infrastructure/
+kubernetes/
+helm/
+terraform/
+scripts/
+docker-compose*.yml
+
+# Cache and temporary files
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.Python
+*.so
+.tox/
+.cache
+.mypy_cache
+.dmypy.json
+
+# Node.js specific
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+lerna-debug.log*
+
+# Go specific
+*.test
+*.out
+vendor/
+
+# Python specific
+*.egg
+*.egg-info/
+.installed.cfg
+*.egg-info
+venv/
+ENV/
+env/

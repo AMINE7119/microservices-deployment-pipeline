@@ -1,0 +1,50 @@
+# Checkov Security Scanning Configuration for Phase 6 Multi-Cloud
+---
+framework:
+  - terraform
+  - dockerfile
+  - kubernetes
+  - secrets
+
+# Directories to scan
+directory:
+  - infrastructure/terraform
+  - kubernetes
+  - services
+
+# Skip certain checks that are expected in development
+skip-check:
+  - CKV_TF_1    # Terraform providers version constraints
+  - CKV_AWS_79  # Ensure Instance Metadata Service Version 1 is not enabled (acceptable for development)
+  - CKV_GCP_7   # Ensure legacy networks do not exist for a project (acceptable for development)
+  - CKV_K8S_1   # Image should not use latest tag (acceptable for development images)
+  - CKV_DOCKER_1 # Ensure port 22 is not exposed (acceptable for base images)
+
+# Custom policies for multi-cloud environment
+check:
+  - CKV_TF_2    # Ensure Terraform state files are encrypted
+  - CKV_AWS_20  # S3 Bucket has MFA Delete enabled
+  - CKV_AWS_21  # Ensure S3 bucket has versioning enabled
+  - CKV_GCP_6   # Ensure all Cloud SQL database instance requires all incoming connections to use SSL
+  - CKV_K8S_8   # Liveness Probe Should be Configured
+  - CKV_K8S_9   # Readiness Probe Should be Configured
+
+# Output configuration
+output: cli
+quiet: false
+compact: false
+
+# Baseline file (will be created after first run)
+baseline: .checkov.baseline
+
+# Multi-cloud specific configurations
+var-file:
+  - infrastructure/terraform/environments/aws/terraform.tfvars
+  - infrastructure/terraform/environments/gcp/terraform.tfvars
+
+# Exclude certain files from scanning
+exclude:
+  - "**/.terraform/**"
+  - "**/node_modules/**"
+  - "**/.git/**"
+  - "**/coverage/**"

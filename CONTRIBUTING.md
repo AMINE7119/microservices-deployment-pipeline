@@ -57,7 +57,7 @@ This is primarily a **portfolio project** designed to demonstrate enterprise-gra
 ### 1. Fork and Clone
 ```bash
 # Fork the repository on GitHub, then:
-git clone https://github.com/YOUR-USERNAME/microservices-deployment-pipeline.git
+git clone https://github.com/AMINE7119/microservices-deployment-pipeline.git
 cd microservices-deployment-pipeline
 
 # Add upstream remote

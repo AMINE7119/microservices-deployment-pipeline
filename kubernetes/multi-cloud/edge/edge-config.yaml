@@ -1,0 +1,177 @@
+# Edge computing configuration for CDN and edge locations
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: edge-config
+  namespace: microservices
+data:
+  cdn_provider: "cloudfront"
+  edge_locations: "global"
+  cache_policy: "optimized"
+
+---
+# Edge-specific service configuration
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-edge
+  namespace: microservices
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+    external-dns.alpha.kubernetes.io/hostname: "edge.microservices.example.com"
+spec:
+  type: LoadBalancer
+  ports:
+    - port: 80
+      targetPort: 3000
+      protocol: TCP
+      name: http
+    - port: 443
+      targetPort: 3000
+      protocol: TCP
+      name: https
+  selector:
+    app: frontend
+
+---
+# Lambda@Edge function configuration (as ConfigMap for reference)
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: lambda-edge-functions
+  namespace: microservices
+data:
+  auth-function.js: |
+    exports.handler = (event, context, callback) => {
+      const request = event.Records[0].cf.request;
+      const headers = request.headers;
+      
+      // Add security headers
+      const response = {
+        status: '200',
+        statusDescription: 'OK',
+        headers: {
+          'strict-transport-security': [{
+            key: 'Strict-Transport-Security',
+            value: 'max-age=31536000; includeSubDomains'
+          }],
+          'x-content-type-options': [{
+            key: 'X-Content-Type-Options',
+            value: 'nosniff'
+          }],
+          'x-frame-options': [{
+            key: 'X-Frame-Options',
+            value: 'DENY'
+          }],
+          'x-xss-protection': [{
+            key: 'X-XSS-Protection',
+            value: '1; mode=block'
+          }],
+          'content-security-policy': [{
+            key: 'Content-Security-Policy',
+            value: "default-src 'self'"
+          }]
+        }
+      };
+      
+      callback(null, response);
+    };
+  
+  headers-function.js: |
+    exports.handler = (event, context, callback) => {
+      const response = event.Records[0].cf.response;
+      const headers = response.headers;
+      
+      // Add custom headers for edge identification
+      headers['x-edge-location'] = [{
+        key: 'X-Edge-Location',
+        value: context.functionName.split('-')[2] || 'unknown'
+      }];
+      
+      headers['x-cache-status'] = [{
+        key: 'X-Cache-Status',
+        value: 'Hit from CloudFront'
+      }];
+      
+      callback(null, response);
+    };
+
+---
+# Edge optimization deployment
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-edge-optimized
+  namespace: microservices
+  labels:
+    app: frontend-edge
+spec:
+  replicas: 2
+  selector:
+    matchLabels:
+      app: frontend-edge
+  template:
+    metadata:
+      labels:
+        app: frontend-edge
+    spec:
+      containers:
+        - name: frontend
+          image: ghcr.io/amine7119/frontend:edge
+          ports:
+            - containerPort: 3000
+          env:
+            - name: ENVIRONMENT
+              value: "edge"
+            - name: CDN_ENABLED
+              value: "true"
+            - name: CACHE_CONTROL
+              value: "public, max-age=31536000"
+          resources:
+            limits:
+              cpu: 200m
+              memory: 256Mi
+            requests:
+              cpu: 100m
+              memory: 128Mi
+          livenessProbe:
+            httpGet:
+              path: /health
+              port: 3000
+            initialDelaySeconds: 30
+            periodSeconds: 10
+          readinessProbe:
+            httpGet:
+              path: /ready
+              port: 3000
+            initialDelaySeconds: 5
+            periodSeconds: 5
+
+---
+# HPA for edge deployment
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: frontend-edge-hpa
+  namespace: microservices
+spec:
+  scaleTargetRef:
+    apiVersion: apps/v1
+    kind: Deployment
+    name: frontend-edge-optimized
+  minReplicas: 2
+  maxReplicas: 10
+  metrics:
+    - type: Resource
+      resource:
+        name: cpu
+        target:
+          type: Utilization
+          averageUtilization: 70
+    - type: Resource
+      resource:
+        name: memory
+        target:
+          type: Utilization
+          averageUtilization: 80
