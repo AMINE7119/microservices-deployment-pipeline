@@ -15,7 +15,9 @@
       "Bash(chmod:*)",
       "Bash(./chaos-engineering/scripts/validation/validate-phase8-offline.sh:*)",
       "Bash(make:*)",
-      "Bash(docker:*)"
+      "Bash(docker:*)",
+      "Bash(grep:*)",
+      "Bash(yamllint:*)"
     ],
     "deny": []
   }
