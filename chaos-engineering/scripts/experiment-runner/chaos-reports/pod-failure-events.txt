@@ -1,0 +1,96 @@
+LAST SEEN   TYPE      REASON              OBJECT                                  MESSAGE
+14m         Normal    Scheduled           pod/api-gateway-5cd64c744c-b77qs        Successfully assigned microservices/api-gateway-5cd64c744c-b77qs to microservices-control-plane
+14m         Normal    ScalingReplicaSet   deployment/api-gateway                  Scaled up replica set api-gateway-5cd64c744c to 1
+14m         Normal    SuccessfulCreate    replicaset/api-gateway-5cd64c744c       Created pod: api-gateway-5cd64c744c-b77qs
+14m         Normal    SuccessfulCreate    replicaset/user-service-85c9759b89      Created pod: user-service-85c9759b89-xsncc
+14m         Normal    ScalingReplicaSet   deployment/user-service                 Scaled up replica set user-service-85c9759b89 to 1
+14m         Normal    Scheduled           pod/user-service-85c9759b89-xsncc       Successfully assigned microservices/user-service-85c9759b89-xsncc to microservices-control-plane
+14m         Normal    Scheduled           pod/product-service-646d4b75cc-zlgdq    Successfully assigned microservices/product-service-646d4b75cc-zlgdq to microservices-control-plane
+14m         Normal    ScalingReplicaSet   deployment/product-service              Scaled up replica set product-service-646d4b75cc to 1
+14m         Normal    SuccessfulCreate    replicaset/product-service-646d4b75cc   Created pod: product-service-646d4b75cc-zlgdq
+13m         Normal    Pulling             pod/product-service-646d4b75cc-zlgdq    Pulling image "microservices-deployment-pipeline-product-service:latest"
+13m         Warning   Failed              pod/product-service-646d4b75cc-zlgdq    Error: ErrImagePull
+13m         Warning   Failed              pod/product-service-646d4b75cc-zlgdq    Failed to pull image "microservices-deployment-pipeline-product-service:latest": rpc error: code = Unknown desc = failed to pull and unpack image "docker.io/library/microservices-deployment-pipeline-product-service:latest": failed to resolve reference "docker.io/library/microservices-deployment-pipeline-product-service:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
+12m         Normal    BackOff             pod/api-gateway-5cd64c744c-b77qs        Back-off pulling image "microservices-deployment-pipeline-api-gateway:latest"
+12m         Warning   Failed              pod/api-gateway-5cd64c744c-b77qs        Error: ImagePullBackOff
+12m         Warning   Failed              pod/user-service-85c9759b89-xsncc       Error: ImagePullBackOff
+12m         Normal    BackOff             pod/user-service-85c9759b89-xsncc       Back-off pulling image "microservices-deployment-pipeline-user-service:latest"
+12m         Warning   Failed              pod/api-gateway-5cd64c744c-b77qs        Failed to pull image "microservices-deployment-pipeline-api-gateway:latest": rpc error: code = Unknown desc = failed to pull and unpack image "docker.io/library/microservices-deployment-pipeline-api-gateway:latest": failed to resolve reference "docker.io/library/microservices-deployment-pipeline-api-gateway:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
+12m         Warning   Failed              pod/api-gateway-5cd64c744c-b77qs        Error: ErrImagePull
+12m         Normal    Pulling             pod/api-gateway-5cd64c744c-b77qs        Pulling image "microservices-deployment-pipeline-api-gateway:latest"
+12m         Normal    Pulling             pod/user-service-85c9759b89-xsncc       Pulling image "microservices-deployment-pipeline-user-service:latest"
+12m         Warning   Failed              pod/user-service-85c9759b89-xsncc       Error: ErrImagePull
+12m         Warning   Failed              pod/user-service-85c9759b89-xsncc       Failed to pull image "microservices-deployment-pipeline-user-service:latest": rpc error: code = Unknown desc = failed to pull and unpack image "docker.io/library/microservices-deployment-pipeline-user-service:latest": failed to resolve reference "docker.io/library/microservices-deployment-pipeline-user-service:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
+12m         Warning   Failed              pod/product-service-646d4b75cc-zlgdq    Error: ImagePullBackOff
+12m         Normal    BackOff             pod/product-service-646d4b75cc-zlgdq    Back-off pulling image "microservices-deployment-pipeline-product-service:latest"
+12m         Normal    Scheduled           pod/api-gateway-5cd64c744c-hptxh        Successfully assigned microservices/api-gateway-5cd64c744c-hptxh to microservices-control-plane
+12m         Normal    SuccessfulCreate    replicaset/api-gateway-5cd64c744c       Created pod: api-gateway-5cd64c744c-hptxh
+12m         Normal    ScalingReplicaSet   deployment/api-gateway                  Scaled up replica set api-gateway-5cd64c744c to 1
+12m         Normal    ScalingReplicaSet   deployment/user-service                 Scaled up replica set user-service-85c9759b89 to 1
+12m         Normal    SuccessfulCreate    replicaset/user-service-85c9759b89      Created pod: user-service-85c9759b89-cn8cx
+12m         Normal    Scheduled           pod/user-service-85c9759b89-cn8cx       Successfully assigned microservices/user-service-85c9759b89-cn8cx to microservices-control-plane
+12m         Normal    ScalingReplicaSet   deployment/product-service              Scaled up replica set product-service-646d4b75cc to 1
+12m         Normal    SuccessfulCreate    replicaset/product-service-646d4b75cc   Created pod: product-service-646d4b75cc-k4tfk
+12m         Normal    Scheduled           pod/product-service-646d4b75cc-k4tfk    Successfully assigned microservices/product-service-646d4b75cc-k4tfk to microservices-control-plane
+11m         Normal    SuccessfulCreate    replicaset/order-service-6967db554b     Created pod: order-service-6967db554b-2tq7x
+11m         Normal    Scheduled           pod/order-service-6967db554b-2tq7x      Successfully assigned microservices/order-service-6967db554b-2tq7x to microservices-control-plane
+11m         Normal    ScalingReplicaSet   deployment/order-service                Scaled up replica set order-service-6967db554b to 1
+10m         Normal    Pulling             pod/api-gateway-5cd64c744c-hptxh        Pulling image "microservices-deployment-pipeline-api-gateway:latest"
+10m         Warning   Failed              pod/api-gateway-5cd64c744c-hptxh        Error: ErrImagePull
+10m         Warning   Failed              pod/api-gateway-5cd64c744c-hptxh        Failed to pull image "microservices-deployment-pipeline-api-gateway:latest": rpc error: code = Unknown desc = failed to pull and unpack image "docker.io/library/microservices-deployment-pipeline-api-gateway:latest": failed to resolve reference "docker.io/library/microservices-deployment-pipeline-api-gateway:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
+10m         Normal    Pulling             pod/user-service-85c9759b89-cn8cx       Pulling image "microservices-deployment-pipeline-user-service:latest"
+10m         Warning   Failed              pod/user-service-85c9759b89-cn8cx       Failed to pull image "microservices-deployment-pipeline-user-service:latest": rpc error: code = Unknown desc = failed to pull and unpack image "docker.io/library/microservices-deployment-pipeline-user-service:latest": failed to resolve reference "docker.io/library/microservices-deployment-pipeline-user-service:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
+10m         Warning   Failed              pod/user-service-85c9759b89-cn8cx       Error: ErrImagePull
+10m         Normal    Pulling             pod/product-service-646d4b75cc-k4tfk    Pulling image "microservices-deployment-pipeline-product-service:latest"
+10m         Warning   Failed              pod/product-service-646d4b75cc-k4tfk    Failed to pull image "microservices-deployment-pipeline-product-service:latest": rpc error: code = Unknown desc = failed to pull and unpack image "docker.io/library/microservices-deployment-pipeline-product-service:latest": failed to resolve reference "docker.io/library/microservices-deployment-pipeline-product-service:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
+10m         Warning   Failed              pod/product-service-646d4b75cc-k4tfk    Error: ErrImagePull
+10m         Warning   Failed              pod/api-gateway-5cd64c744c-hptxh        Error: ImagePullBackOff
+10m         Warning   Failed              pod/order-service-6967db554b-2tq7x      Error: ErrImagePull
+10m         Warning   Failed              pod/order-service-6967db554b-2tq7x      Failed to pull image "microservices-deployment-pipeline-order-service:latest": rpc error: code = Unknown desc = failed to pull and unpack image "docker.io/library/microservices-deployment-pipeline-order-service:latest": failed to resolve reference "docker.io/library/microservices-deployment-pipeline-order-service:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
+10m         Normal    Pulling             pod/order-service-6967db554b-2tq7x      Pulling image "microservices-deployment-pipeline-order-service:latest"
+10m         Warning   Failed              pod/user-service-85c9759b89-cn8cx       Error: ImagePullBackOff
+10m         Warning   Failed              pod/product-service-646d4b75cc-k4tfk    Error: ImagePullBackOff
+10m         Warning   Failed              pod/order-service-6967db554b-2tq7x      Error: ImagePullBackOff
+10m         Normal    BackOff             pod/api-gateway-5cd64c744c-hptxh        Back-off pulling image "microservices-deployment-pipeline-api-gateway:latest"
+9m55s       Normal    BackOff             pod/user-service-85c9759b89-cn8cx       Back-off pulling image "microservices-deployment-pipeline-user-service:latest"
+9m50s       Normal    BackOff             pod/product-service-646d4b75cc-k4tfk    Back-off pulling image "microservices-deployment-pipeline-product-service:latest"
+9m48s       Normal    BackOff             pod/order-service-6967db554b-2tq7x      Back-off pulling image "microservices-deployment-pipeline-order-service:latest"
+7m45s       Normal    SuccessfulCreate    replicaset/api-gateway-7dc9d69f5c       Created pod: api-gateway-7dc9d69f5c-t8dqz
+7m45s       Normal    SuccessfulCreate    replicaset/product-service-b475b645d    Created pod: product-service-b475b645d-mt4mq
+7m45s       Normal    Scheduled           pod/product-service-b475b645d-kt8rs     Successfully assigned microservices/product-service-b475b645d-kt8rs to microservices-control-plane
+7m45s       Normal    Scheduled           pod/product-service-b475b645d-mt4mq     Successfully assigned microservices/product-service-b475b645d-mt4mq to microservices-control-plane
+7m45s       Normal    ScalingReplicaSet   deployment/user-service                 Scaled up replica set user-service-5844679d59 to 2
+7m45s       Normal    Scheduled           pod/api-gateway-7dc9d69f5c-rj5xz        Successfully assigned microservices/api-gateway-7dc9d69f5c-rj5xz to microservices-control-plane
+7m45s       Normal    SuccessfulCreate    replicaset/user-service-5844679d59      Created pod: user-service-5844679d59-lm968
+7m45s       Normal    Scheduled           pod/user-service-5844679d59-rc2xm       Successfully assigned microservices/user-service-5844679d59-rc2xm to microservices-control-plane
+7m45s       Normal    SuccessfulCreate    replicaset/product-service-b475b645d    Created pod: product-service-b475b645d-kt8rs
+7m45s       Normal    ScalingReplicaSet   deployment/api-gateway                  Scaled up replica set api-gateway-7dc9d69f5c to 2
+7m45s       Normal    Scheduled           pod/api-gateway-7dc9d69f5c-t8dqz        Successfully assigned microservices/api-gateway-7dc9d69f5c-t8dqz to microservices-control-plane
+7m45s       Normal    ScalingReplicaSet   deployment/product-service              Scaled up replica set product-service-b475b645d to 2
+7m45s       Normal    Scheduled           pod/user-service-5844679d59-lm968       Successfully assigned microservices/user-service-5844679d59-lm968 to microservices-control-plane
+7m45s       Normal    SuccessfulCreate    replicaset/api-gateway-7dc9d69f5c       Created pod: api-gateway-7dc9d69f5c-rj5xz
+7m45s       Normal    SuccessfulCreate    replicaset/user-service-5844679d59      Created pod: user-service-5844679d59-rc2xm
+7m44s       Normal    Pulled              pod/user-service-5844679d59-lm968       Container image "microservices-deployment-pipeline-user-service:latest" already present on machine
+7m44s       Normal    Pulled              pod/product-service-b475b645d-kt8rs     Container image "microservices-deployment-pipeline-product-service:latest" already present on machine
+7m44s       Normal    Pulled              pod/user-service-5844679d59-rc2xm       Container image "microservices-deployment-pipeline-user-service:latest" already present on machine
+7m44s       Normal    Created             pod/user-service-5844679d59-rc2xm       Created container user-service
+7m44s       Normal    Started             pod/user-service-5844679d59-rc2xm       Started container user-service
+7m44s       Normal    Created             pod/user-service-5844679d59-lm968       Created container user-service
+7m44s       Normal    Started             pod/product-service-b475b645d-mt4mq     Started container product-service
+7m44s       Normal    Created             pod/product-service-b475b645d-mt4mq     Created container product-service
+7m44s       Normal    Pulled              pod/product-service-b475b645d-mt4mq     Container image "microservices-deployment-pipeline-product-service:latest" already present on machine
+7m44s       Normal    Started             pod/product-service-b475b645d-kt8rs     Started container product-service
+7m44s       Normal    Created             pod/product-service-b475b645d-kt8rs     Created container product-service
+7m44s       Normal    Started             pod/user-service-5844679d59-lm968       Started container user-service
+7m36s       Normal    Killing             pod/api-gateway-7dc9d69f5c-t8dqz        Container api-gateway definition changed, will be restarted
+7m36s       Normal    Killing             pod/api-gateway-7dc9d69f5c-rj5xz        Container api-gateway definition changed, will be restarted
+7m9s        Warning   Failed              pod/api-gateway-7dc9d69f5c-t8dqz        Error: ErrImageNeverPull
+7m9s        Warning   ErrImageNeverPull   pod/api-gateway-7dc9d69f5c-t8dqz        Container image "gcr.io/google-containers/pause:latest" is not present with pull policy of Never
+7m7s        Warning   Failed              pod/api-gateway-7dc9d69f5c-rj5xz        Error: ErrImageNeverPull
+7m7s        Warning   ErrImageNeverPull   pod/api-gateway-7dc9d69f5c-rj5xz        Container image "gcr.io/google-containers/pause:latest" is not present with pull policy of Never
+7m3s        Normal    Started             pod/api-gateway-7dc9d69f5c-t8dqz        Started container api-gateway
+7m3s        Normal    Created             pod/api-gateway-7dc9d69f5c-t8dqz        Created container api-gateway
+7m3s        Normal    Pulled              pod/api-gateway-7dc9d69f5c-t8dqz        Container image "microservices-deployment-pipeline-api-gateway:latest" already present on machine
+7m3s        Normal    Started             pod/api-gateway-7dc9d69f5c-rj5xz        Started container api-gateway
+7m3s        Normal    Created             pod/api-gateway-7dc9d69f5c-rj5xz        Created container api-gateway
+7m3s        Normal    Pulled              pod/api-gateway-7dc9d69f5c-rj5xz        Container image "microservices-deployment-pipeline-api-gateway:latest" already present on machine

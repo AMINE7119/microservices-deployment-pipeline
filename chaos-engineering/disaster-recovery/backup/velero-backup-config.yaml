@@ -1,0 +1,144 @@
+# Velero Backup Configuration for Disaster Recovery
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: velero
+---
+apiVersion: velero.io/v1
+kind: BackupStorageLocation
+metadata:
+  name: aws-backup
+  namespace: velero
+spec:
+  provider: aws
+  objectStorage:
+    bucket: microservices-velero-backup
+    prefix: chaos-engineering
+  config:
+    region: us-east-1
+    s3ForcePathStyle: "true"
+    s3Url: https://s3.amazonaws.com
+---
+apiVersion: velero.io/v1
+kind: BackupStorageLocation
+metadata:
+  name: gcp-backup
+  namespace: velero
+spec:
+  provider: gcp
+  objectStorage:
+    bucket: microservices-velero-backup-gcp
+    prefix: chaos-engineering
+  config:
+    serviceAccount: velero@project-id.iam.gserviceaccount.com
+---
+apiVersion: velero.io/v1
+kind: VolumeSnapshotLocation
+metadata:
+  name: aws-volume-snapshots
+  namespace: velero
+spec:
+  provider: aws
+  config:
+    region: us-east-1
+---
+apiVersion: velero.io/v1
+kind: VolumeSnapshotLocation
+metadata:
+  name: gcp-volume-snapshots
+  namespace: velero
+spec:
+  provider: gcp
+  config:
+    project: project-id
+    snapshotLocation: us-central1
+---
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: daily-backup
+  namespace: velero
+spec:
+  schedule: "0 2 * * *"  # Daily at 2 AM
+  template:
+    includedNamespaces:
+      - microservices
+      - monitoring
+      - chaos-mesh
+    excludedResources:
+      - events
+      - events.events.k8s.io
+    storageLocation: aws-backup
+    volumeSnapshotLocations:
+      - aws-volume-snapshots
+    ttl: 720h  # 30 days retention
+    hooks:
+      resources:
+        - name: postgresql-backup
+          includedNamespaces:
+            - microservices
+          labelSelector:
+            matchLabels:
+              app: postgresql
+          pre:
+            - exec:
+                container: postgresql
+                command:
+                  - /bin/bash
+                  - -c
+                  - pg_dump -U postgres -d microservices > /backup/pre-backup.sql
+          post:
+            - exec:
+                container: postgresql
+                command:
+                  - /bin/bash
+                  - -c
+                  - rm /backup/pre-backup.sql
+---
+apiVersion: velero.io/v1
+kind: Schedule
+metadata:
+  name: hourly-critical-backup
+  namespace: velero
+spec:
+  schedule: "0 * * * *"  # Every hour
+  template:
+    includedNamespaces:
+      - microservices
+    includedResources:
+      - persistentvolumeclaims
+      - persistentvolumes
+      - configmaps
+      - secrets
+      - services
+    labelSelector:
+      matchLabels:
+        critical: "true"
+    storageLocation: aws-backup
+    ttl: 168h  # 7 days retention
+---
+apiVersion: velero.io/v1
+kind: Backup
+metadata:
+  name: pre-chaos-backup
+  namespace: velero
+spec:
+  includedNamespaces:
+    - microservices
+    - monitoring
+  storageLocation: aws-backup
+  volumeSnapshotLocations:
+    - aws-volume-snapshots
+  ttl: 24h
+  hooks:
+    resources:
+      - name: quiesce-services
+        includedNamespaces:
+          - microservices
+        pre:
+          - exec:
+              container: api-gateway
+              command:
+                - /bin/sh
+                - -c
+                - touch /tmp/maintenance-mode

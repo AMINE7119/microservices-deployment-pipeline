@@ -12,7 +12,10 @@
       "Bash(cp:*)",
       "Bash(python3:*)",
       "Bash(touch:*)",
-      "Bash(chmod:*)"
+      "Bash(chmod:*)",
+      "Bash(./chaos-engineering/scripts/validation/validate-phase8-offline.sh:*)",
+      "Bash(make:*)",
+      "Bash(docker:*)"
     ],
     "deny": []
   }

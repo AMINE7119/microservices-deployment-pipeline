@@ -1,0 +1,514 @@
+name: Chaos Engineering Pipeline
+
+on:
+  schedule:
+    # Run chaos tests daily at 2 AM UTC
+    - cron: '0 2 * * *'
+  workflow_dispatch:
+    inputs:
+      chaos_level:
+        description: 'Chaos experiment intensity level'
+        required: true
+        default: 'medium'
+        type: choice
+        options:
+        - low
+        - medium
+        - high
+      target_environment:
+        description: 'Target environment for chaos tests'
+        required: true
+        default: 'staging'
+        type: choice
+        options:
+        - staging
+        - production
+      experiment_type:
+        description: 'Type of chaos experiment to run'
+        required: true
+        default: 'all'
+        type: choice
+        options:
+        - all
+        - pod-failures
+        - network-chaos
+        - resource-stress
+        - io-chaos
+        - time-chaos
+        - disaster-recovery
+
+env:
+  KUBECTL_VERSION: v1.28.0
+  HELM_VERSION: v3.12.0
+  CHAOS_MESH_VERSION: 2.6.3
+  LITMUS_VERSION: 3.0.0
+  
+jobs:
+  pre-chaos-validation:
+    runs-on: ubuntu-latest
+    outputs:
+      baseline-healthy: ${{ steps.health-check.outputs.healthy }}
+      backup-completed: ${{ steps.backup.outputs.completed }}
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup kubectl
+      uses: azure/setup-kubectl@v3
+      with:
+        version: ${{ env.KUBECTL_VERSION }}
+        
+    - name: Configure kubectl
+      run: |
+        mkdir -p ~/.kube
+        echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
+        
+    - name: Validate cluster connectivity
+      run: |
+        kubectl cluster-info
+        kubectl get nodes
+        
+    - name: Check baseline health
+      id: health-check
+      run: |
+        # Run comprehensive health check
+        ./scripts/health-check.sh
+        if [ $? -eq 0 ]; then
+          echo "healthy=true" >> $GITHUB_OUTPUT
+        else
+          echo "healthy=false" >> $GITHUB_OUTPUT
+          exit 1
+        fi
+        
+    - name: Create pre-chaos backup
+      id: backup
+      run: |
+        # Create backup before chaos experiments
+        cd chaos-engineering/disaster-recovery/backup
+        ./backup-automation.sh
+        if [ $? -eq 0 ]; then
+          echo "completed=true" >> $GITHUB_OUTPUT
+        else
+          echo "completed=false" >> $GITHUB_OUTPUT
+          exit 1
+        fi
+        
+    - name: Collect baseline metrics
+      run: |
+        # Collect baseline performance metrics
+        mkdir -p chaos-reports/baseline
+        curl -s "http://prometheus.monitoring:9090/api/v1/query?query=up" > chaos-reports/baseline/services-up.json
+        curl -s "http://prometheus.monitoring:9090/api/v1/query?query=rate(http_requests_total[5m])" > chaos-reports/baseline/request-rate.json
+        curl -s "http://prometheus.monitoring:9090/api/v1/query?query=histogram_quantile(0.99,rate(http_request_duration_seconds_bucket[5m]))" > chaos-reports/baseline/response-time.json
+        
+    - name: Upload baseline artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: baseline-metrics
+        path: chaos-reports/baseline/
+        retention-days: 7
+
+  install-chaos-frameworks:
+    runs-on: ubuntu-latest
+    needs: pre-chaos-validation
+    if: needs.pre-chaos-validation.outputs.baseline-healthy == 'true'
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Setup tools
+      run: |
+        # Install kubectl
+        curl -LO "https://dl.k8s.io/release/${{ env.KUBECTL_VERSION }}/bin/linux/amd64/kubectl"
+        sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl
+        
+        # Install Helm
+        curl -fsSL -o get_helm.sh https://raw.githubusercontent.com/helm/helm/main/scripts/get-helm-3
+        chmod 700 get_helm.sh
+        ./get_helm.sh --version ${{ env.HELM_VERSION }}
+        
+    - name: Configure kubectl
+      run: |
+        mkdir -p ~/.kube
+        echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
+        
+    - name: Install Chaos Mesh
+      run: |
+        cd chaos-engineering/chaos-mesh/installation
+        chmod +x install.sh
+        ./install.sh
+        
+        # Wait for Chaos Mesh to be ready
+        kubectl wait --for=condition=ready pod -l app.kubernetes.io/name=chaos-mesh -n chaos-mesh --timeout=300s
+        
+    - name: Install Litmus
+      run: |
+        cd chaos-engineering/litmus/installation
+        kubectl apply -f litmus-install.yaml
+        
+        # Wait for Litmus to be ready
+        kubectl wait --for=condition=ready pod -l app=litmus-portal-server -n litmus --timeout=300s
+        
+    - name: Verify installations
+      run: |
+        # Verify Chaos Mesh
+        kubectl get pods -n chaos-mesh
+        kubectl get crd | grep chaos-mesh
+        
+        # Verify Litmus
+        kubectl get pods -n litmus
+        kubectl get crd | grep litmus
+
+  run-chaos-experiments:
+    runs-on: ubuntu-latest
+    needs: [pre-chaos-validation, install-chaos-frameworks]
+    if: needs.pre-chaos-validation.outputs.baseline-healthy == 'true'
+    strategy:
+      matrix:
+        experiment: 
+          - pod-failures
+          - network-chaos
+          - resource-stress
+          - io-chaos
+          - time-chaos
+        environment: [staging]
+      fail-fast: false
+      
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Configure kubectl
+      run: |
+        mkdir -p ~/.kube
+        echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
+        
+    - name: Run ${{ matrix.experiment }} experiment
+      run: |
+        experiment_type="${{ matrix.experiment }}"
+        chaos_level="${{ github.event.inputs.chaos_level || 'medium' }}"
+        
+        echo "Running $experiment_type experiment with $chaos_level intensity"
+        
+        case $experiment_type in
+          "pod-failures")
+            kubectl apply -f chaos-engineering/chaos-mesh/experiments/pod/pod-failure.yaml
+            ;;
+          "network-chaos")
+            kubectl apply -f chaos-engineering/chaos-mesh/experiments/network/network-chaos.yaml
+            ;;
+          "resource-stress")
+            kubectl apply -f chaos-engineering/chaos-mesh/experiments/stress/stress-chaos.yaml
+            ;;
+          "io-chaos")
+            kubectl apply -f chaos-engineering/chaos-mesh/experiments/io/io-chaos.yaml
+            ;;
+          "time-chaos")
+            kubectl apply -f chaos-engineering/chaos-mesh/experiments/time/time-chaos.yaml
+            ;;
+        esac
+        
+        # Wait for experiment to complete
+        sleep 180
+        
+    - name: Monitor experiment progress
+      run: |
+        experiment_type="${{ matrix.experiment }}"
+        
+        # Monitor chaos experiment status
+        for i in {1..20}; do
+          echo "=== Monitoring iteration $i ==="
+          
+          # Check chaos experiment status
+          kubectl get podchaos,networkchaos,stresschaos,iochaos,timechaos -n chaos-mesh
+          
+          # Check application health
+          kubectl get pods -n microservices
+          
+          # Collect metrics
+          mkdir -p chaos-reports/$experiment_type
+          
+          # Service availability
+          kubectl get endpoints -n microservices > chaos-reports/$experiment_type/endpoints-$i.txt
+          
+          # Error rates and response times
+          if curl -s http://prometheus.monitoring:9090/api/v1/query?query=rate\(http_requests_total\[1m\]\) > /dev/null 2>&1; then
+            curl -s "http://prometheus.monitoring:9090/api/v1/query?query=rate(http_requests_total{status=~\"5..\"}[1m])" > chaos-reports/$experiment_type/error-rate-$i.json
+            curl -s "http://prometheus.monitoring:9090/api/v1/query?query=histogram_quantile(0.99,rate(http_request_duration_seconds_bucket[1m]))" > chaos-reports/$experiment_type/response-time-$i.json
+          fi
+          
+          sleep 30
+        done
+        
+    - name: Cleanup experiment
+      if: always()
+      run: |
+        experiment_type="${{ matrix.experiment }}"
+        
+        # Delete chaos experiments
+        kubectl delete podchaos --all -n chaos-mesh || true
+        kubectl delete networkchaos --all -n chaos-mesh || true
+        kubectl delete stresschaos --all -n chaos-mesh || true
+        kubectl delete iochaos --all -n chaos-mesh || true
+        kubectl delete timechaos --all -n chaos-mesh || true
+        
+        # Wait for cleanup
+        sleep 60
+        
+    - name: Validate recovery
+      run: |
+        experiment_type="${{ matrix.experiment }}"
+        
+        # Wait for services to recover
+        echo "Waiting for services to recover..."
+        for service in api-gateway user-service product-service order-service; do
+          kubectl wait --for=condition=ready pod -l app=$service -n microservices --timeout=300s || true
+        done
+        
+        # Validate all services are healthy
+        ./scripts/health-check.sh
+        recovery_status=$?
+        
+        # Record recovery time
+        echo "{\"experiment\":\"$experiment_type\",\"recovery_status\":$recovery_status,\"timestamp\":\"$(date -u +\"%Y-%m-%dT%H:%M:%SZ\")\"}" > chaos-reports/$experiment_type/recovery-status.json
+        
+    - name: Upload experiment results
+      if: always()
+      uses: actions/upload-artifact@v4
+      with:
+        name: chaos-experiment-${{ matrix.experiment }}-results
+        path: chaos-reports/${{ matrix.experiment }}/
+        retention-days: 30
+
+  disaster-recovery-test:
+    runs-on: ubuntu-latest
+    needs: [pre-chaos-validation, install-chaos-frameworks]
+    if: needs.pre-chaos-validation.outputs.baseline-healthy == 'true' && (github.event.inputs.experiment_type == 'disaster-recovery' || github.event.inputs.experiment_type == 'all')
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Configure kubectl
+      run: |
+        mkdir -p ~/.kube
+        echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
+        
+    - name: Run disaster recovery scenario
+      run: |
+        echo "=== Starting Disaster Recovery Test ==="
+        
+        # Apply multi-region failover scenario
+        kubectl apply -f chaos-engineering/disaster-recovery/failover/multi-region-failover.yaml
+        
+        # Simulate primary region failure
+        kubectl apply -f chaos-engineering/chaos-mesh/experiments/workflow-experiments.yaml
+        
+        # Wait for failover to trigger
+        sleep 300
+        
+        # Monitor failover progress
+        kubectl get pods -n microservices --selector="region=us-central1"
+        kubectl get services -n microservices
+        
+    - name: Validate disaster recovery
+      run: |
+        # Test application availability after failover
+        ./scripts/health-check.sh
+        
+        # Validate data consistency
+        ./scripts/validate-data-consistency.sh
+        
+        # Check backup integrity
+        cd chaos-engineering/disaster-recovery/backup
+        ./backup-automation.sh --validate-only
+        
+    - name: Test restore procedure
+      run: |
+        echo "=== Testing Restore Procedure ==="
+        
+        cd chaos-engineering/disaster-recovery/restore
+        ./restore-automation.sh --dry-run
+        
+        # Validate restore capabilities
+        echo "Restore validation completed"
+
+  post-chaos-analysis:
+    runs-on: ubuntu-latest
+    needs: [run-chaos-experiments, disaster-recovery-test]
+    if: always()
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Download all artifacts
+      uses: actions/download-artifact@v4
+      
+    - name: Generate chaos test report
+      run: |
+        # Install dependencies
+        pip install jinja2 matplotlib pandas
+        
+        # Generate comprehensive report
+        python3 scripts/generate-chaos-report.py \
+          --baseline-dir baseline-metrics \
+          --results-dir . \
+          --output chaos-test-report.html
+        
+    - name: Calculate resilience metrics
+      run: |
+        # Calculate key metrics
+        python3 << 'EOF'
+        import json
+        import glob
+        import os
+        
+        # Collect all recovery status files
+        recovery_files = glob.glob("**/recovery-status.json", recursive=True)
+        
+        total_experiments = 0
+        successful_recoveries = 0
+        recovery_times = []
+        
+        for file in recovery_files:
+          if os.path.exists(file):
+            with open(file, 'r') as f:
+              data = json.load(f)
+              total_experiments += 1
+              if data.get('recovery_status', 1) == 0:
+                successful_recoveries += 1
+        
+        # Calculate success rate
+        success_rate = (successful_recoveries / total_experiments * 100) if total_experiments > 0 else 0
+        
+        # Create summary
+        summary = {
+          "total_experiments": total_experiments,
+          "successful_recoveries": successful_recoveries,
+          "success_rate": round(success_rate, 2),
+          "timestamp": "$(date -u +'%Y-%m-%dT%H:%M:%SZ')"
+        }
+        
+        with open('chaos-test-summary.json', 'w') as f:
+          json.dump(summary, f, indent=2)
+          
+        print(f"Chaos Engineering Test Summary:")
+        print(f"- Total Experiments: {total_experiments}")
+        print(f"- Successful Recoveries: {successful_recoveries}")
+        print(f"- Success Rate: {success_rate}%")
+        EOF
+        
+    - name: Upload final report
+      uses: actions/upload-artifact@v4
+      with:
+        name: chaos-engineering-report
+        path: |
+          chaos-test-report.html
+          chaos-test-summary.json
+        retention-days: 90
+        
+    - name: Post results to Slack
+      if: always()
+      run: |
+        if [ -f chaos-test-summary.json ]; then
+          SUMMARY=$(cat chaos-test-summary.json)
+          SUCCESS_RATE=$(echo $SUMMARY | jq -r '.success_rate')
+          TOTAL_EXP=$(echo $SUMMARY | jq -r '.total_experiments')
+          
+          if (( $(echo "$SUCCESS_RATE >= 95" | bc -l) )); then
+            STATUS="✅ PASSED"
+            COLOR="good"
+          elif (( $(echo "$SUCCESS_RATE >= 80" | bc -l) )); then
+            STATUS="⚠️ PARTIAL"
+            COLOR="warning" 
+          else
+            STATUS="❌ FAILED"
+            COLOR="danger"
+          fi
+          
+          PAYLOAD=$(cat <<EOF
+        {
+          "attachments": [
+            {
+              "color": "$COLOR",
+              "blocks": [
+                {
+                  "type": "header",
+                  "text": {
+                    "type": "plain_text",
+                    "text": "Chaos Engineering Results $STATUS"
+                  }
+                },
+                {
+                  "type": "section",
+                  "fields": [
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Total Experiments:* $TOTAL_EXP"
+                    },
+                    {
+                      "type": "mrkdwn", 
+                      "text": "*Success Rate:* $SUCCESS_RATE%"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Environment:* ${{ github.event.inputs.target_environment || 'staging' }}"
+                    },
+                    {
+                      "type": "mrkdwn",
+                      "text": "*Chaos Level:* ${{ github.event.inputs.chaos_level || 'medium' }}"
+                    }
+                  ]
+                }
+              ]
+            }
+          ]
+        }
+        EOF
+          )
+          
+          curl -X POST -H 'Content-type: application/json' \
+            --data "$PAYLOAD" \
+            "${{ secrets.SLACK_WEBHOOK_URL }}" || true
+        fi
+
+  cleanup:
+    runs-on: ubuntu-latest
+    needs: [run-chaos-experiments, disaster-recovery-test, post-chaos-analysis]
+    if: always()
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+      
+    - name: Configure kubectl
+      run: |
+        mkdir -p ~/.kube
+        echo "${{ secrets.KUBECONFIG }}" | base64 -d > ~/.kube/config
+        
+    - name: Clean up chaos frameworks
+      if: github.event.inputs.target_environment == 'staging'
+      run: |
+        # Clean up Chaos Mesh experiments
+        kubectl delete podchaos,networkchaos,stresschaos,iochaos,timechaos --all -n chaos-mesh || true
+        kubectl delete workflow --all -n litmus || true
+        
+        # Optionally remove frameworks in staging
+        # kubectl delete namespace chaos-mesh || true
+        # kubectl delete namespace litmus || true
+        
+    - name: Ensure services are healthy
+      run: |
+        # Ensure all services are back to normal
+        for service in api-gateway user-service product-service order-service frontend; do
+          kubectl scale deployment $service -n microservices --replicas=2
+        done
+        
+        # Wait for services to be ready
+        kubectl wait --for=condition=ready pod --all -n microservices --timeout=300s
+        
+        # Final health check
+        ./scripts/health-check.sh

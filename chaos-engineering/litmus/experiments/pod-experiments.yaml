@@ -1,0 +1,139 @@
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: microservices-pod-delete
+  namespace: litmus
+spec:
+  appinfo:
+    appns: microservices
+    applabel: "app=api-gateway"
+    appkind: deployment
+  engineState: "active"
+  chaosServiceAccount: litmus
+  experiments:
+    - name: pod-delete
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "60"
+            - name: CHAOS_INTERVAL
+              value: "10"
+            - name: FORCE
+              value: "false"
+            - name: PODS_AFFECTED_PERC
+              value: "50"
+        probe:
+          - name: check-api-gateway-availability
+            type: httpProbe
+            httpProbe/inputs:
+              url: http://api-gateway.microservices:8080/health
+              insecureSkipVerify: false
+              method:
+                get:
+                  criteria: ==
+                  responseCode: "200"
+            mode: Continuous
+            runProperties:
+              probeTimeout: 5
+              interval: 10
+              retry: 3
+---
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: microservices-pod-autoscaler
+  namespace: litmus
+spec:
+  appinfo:
+    appns: microservices
+    applabel: "app=user-service"
+    appkind: deployment
+  engineState: "active"
+  chaosServiceAccount: litmus
+  experiments:
+    - name: pod-autoscaler
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "120"
+            - name: REPLICA_COUNT
+              value: "10"
+        probe:
+          - name: check-autoscaling
+            type: promProbe
+            promProbe/inputs:
+              endpoint: http://prometheus.monitoring:9090
+              query: "sum(rate(container_cpu_usage_seconds_total{namespace=\"microservices\",pod=~\"user-service.*\"}[1m]))"
+              comparator:
+                type: ">"
+                value: "0.8"
+            mode: Edge
+            runProperties:
+              probeTimeout: 5
+              interval: 10
+---
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: microservices-pod-memory-hog
+  namespace: litmus
+spec:
+  appinfo:
+    appns: microservices
+    applabel: "app=product-service"
+    appkind: deployment
+  engineState: "active"
+  chaosServiceAccount: litmus
+  experiments:
+    - name: pod-memory-hog
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "90"
+            - name: MEMORY_CONSUMPTION
+              value: "500"
+            - name: NUMBER_OF_WORKERS
+              value: "2"
+            - name: PODS_AFFECTED_PERC
+              value: "100"
+---
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: microservices-pod-cpu-hog
+  namespace: litmus
+spec:
+  appinfo:
+    appns: microservices
+    applabel: "app=order-service"
+    appkind: deployment
+  engineState: "active"
+  chaosServiceAccount: litmus
+  experiments:
+    - name: pod-cpu-hog
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "60"
+            - name: CPU_CORES
+              value: "2"
+            - name: CPU_LOAD
+              value: "80"
+            - name: PODS_AFFECTED_PERC
+              value: "50"
+        probe:
+          - name: check-order-service-performance
+            type: cmdProbe
+            cmdProbe/inputs:
+              command: |
+                response_time=$(curl -o /dev/null -s -w '%{time_total}' http://order-service.microservices:8082/health)
+                if (( $(echo "$response_time > 2" | bc -l) )); then exit 1; else exit 0; fi
+              source: inline
+            mode: Continuous
+            runProperties:
+              probeTimeout: 10
+              interval: 15

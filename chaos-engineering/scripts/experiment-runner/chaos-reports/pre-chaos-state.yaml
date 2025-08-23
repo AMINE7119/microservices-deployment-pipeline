@@ -1,0 +1,1043 @@
+apiVersion: v1
+items:
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    creationTimestamp: "2025-08-23T09:19:16Z"
+    generateName: api-gateway-7dc9d69f5c-
+    labels:
+      app: api-gateway
+      pod-template-hash: 7dc9d69f5c
+    name: api-gateway-7dc9d69f5c-rj5xz
+    namespace: microservices
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: ReplicaSet
+      name: api-gateway-7dc9d69f5c
+      uid: fb791d8c-b5bf-422c-a246-11e32742a024
+    resourceVersion: "4665"
+    uid: b10406ae-1937-4e0d-a8d4-d353d2f53712
+  spec:
+    containers:
+    - image: microservices-deployment-pipeline-api-gateway:latest
+      imagePullPolicy: Never
+      name: api-gateway
+      ports:
+      - containerPort: 8080
+        protocol: TCP
+      resources: {}
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      volumeMounts:
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-qg4hr
+        readOnly: true
+    dnsPolicy: ClusterFirst
+    enableServiceLinks: true
+    nodeName: microservices-control-plane
+    preemptionPolicy: PreemptLowerPriority
+    priority: 0
+    restartPolicy: Always
+    schedulerName: default-scheduler
+    securityContext: {}
+    serviceAccount: default
+    serviceAccountName: default
+    terminationGracePeriodSeconds: 30
+    tolerations:
+    - effect: NoExecute
+      key: node.kubernetes.io/not-ready
+      operator: Exists
+      tolerationSeconds: 300
+    - effect: NoExecute
+      key: node.kubernetes.io/unreachable
+      operator: Exists
+      tolerationSeconds: 300
+    volumes:
+    - name: kube-api-access-qg4hr
+      projected:
+        defaultMode: 420
+        sources:
+        - serviceAccountToken:
+            expirationSeconds: 3607
+            path: token
+        - configMap:
+            items:
+            - key: ca.crt
+              path: ca.crt
+            name: kube-root-ca.crt
+        - downwardAPI:
+            items:
+            - fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+              path: namespace
+  status:
+    conditions:
+    - lastProbeTime: null
+      lastTransitionTime: "2025-08-23T09:19:16Z"
+      status: "True"
+      type: Initialized
+    - lastProbeTime: null
+      lastTransitionTime: "2025-08-23T09:19:58Z"
+      status: "True"
+      type: Ready
+    - lastProbeTime: null
+      lastTransitionTime: "2025-08-23T09:19:58Z"
+      status: "True"
+      type: ContainersReady
+    - lastProbeTime: null
+      lastTransitionTime: "2025-08-23T09:19:16Z"
+      status: "True"
+      type: PodScheduled
+    containerStatuses:
+    - containerID: containerd://23391853144254d27437a91844cea7478f0aeb3c7e91cbb65fded19d723d58d2
+      image: docker.io/library/microservices-deployment-pipeline-api-gateway:latest
+      imageID: docker.io/library/import-2025-08-23@sha256:c8847e2b3d5b2d383051433eaa5c416cc21f412ef675b86989a3e913d210199e
+      lastState:
+        terminated:
+          containerID: containerd://11c5fd5d5e82439b3a03b4175ccb996e36707183762c8963d6f61c9e875817fa
+          exitCode: 0
+          finishedAt: "2025-08-23T09:19:25Z"
+          reason: Completed
+          startedAt: "2025-08-23T09:19:17Z"
+      name: api-gateway
+      ready: true
+      restartCount: 1
+      started: true
+      state:
+        running:
+          startedAt: "2025-08-23T09:19:58Z"
+    hostIP: 172.18.0.2
+    phase: Running
+    podIP: 10.244.0.24
+    podIPs:
+    - ip: 10.244.0.24
+    qosClass: BestEffort
+    startTime: "2025-08-23T09:19:16Z"
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    creationTimestamp: "2025-08-23T09:19:16Z"
+    generateName: api-gateway-7dc9d69f5c-
+    labels:
+      app: api-gateway
+      pod-template-hash: 7dc9d69f5c
+    name: api-gateway-7dc9d69f5c-t8dqz
+    namespace: microservices
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: ReplicaSet
+      name: api-gateway-7dc9d69f5c
+      uid: fb791d8c-b5bf-422c-a246-11e32742a024
+    resourceVersion: "4663"
+    uid: 0e77e5c9-1573-47a8-9d67-175f211b5fa4
+  spec:
+    containers:
+    - image: microservices-deployment-pipeline-api-gateway:latest
+      imagePullPolicy: Never
+      name: api-gateway
+      ports:
+      - containerPort: 8080
+        protocol: TCP
+      resources: {}
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      volumeMounts:
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-kktpj
+        readOnly: true
+    dnsPolicy: ClusterFirst
+    enableServiceLinks: true
+    nodeName: microservices-control-plane
+    preemptionPolicy: PreemptLowerPriority
+    priority: 0
+    restartPolicy: Always
+    schedulerName: default-scheduler
+    securityContext: {}
+    serviceAccount: default
+    serviceAccountName: default
+    terminationGracePeriodSeconds: 30
+    tolerations:
+    - effect: NoExecute
+      key: node.kubernetes.io/not-ready
+      operator: Exists
+      tolerationSeconds: 300
+    - effect: NoExecute
+      key: node.kubernetes.io/unreachable
+      operator: Exists
+      tolerationSeconds: 300
+    volumes:
+    - name: kube-api-access-kktpj
+      projected:
+        defaultMode: 420
+        sources:
+        - serviceAccountToken:
+            expirationSeconds: 3607
+            path: token
+        - configMap:
+            items:
+            - key: ca.crt
+              path: ca.crt
+            name: kube-root-ca.crt
+        - downwardAPI:
+            items:
+            - fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+              path: namespace
+  status:
+    conditions:
+    - lastProbeTime: null
+      lastTransitionTime: "2025-08-23T09:19:16Z"
+      status: "True"
+      type: Initialized
+    - lastProbeTime: null
+      lastTransitionTime: "2025-08-23T09:19:58Z"
+      status: "True"
+      type: Ready
+    - lastProbeTime: null
+      lastTransitionTime: "2025-08-23T09:19:58Z"
+      status: "True"
+      type: ContainersReady
+    - lastProbeTime: null
+      lastTransitionTime: "2025-08-23T09:19:16Z"
+      status: "True"
+      type: PodScheduled
+    containerStatuses:
+    - containerID: containerd://12ac69e9e953428f7b114197dbe383877b3c44ef76669329e0f36970ecfd563b
+      image: docker.io/library/microservices-deployment-pipeline-api-gateway:latest
+      imageID: docker.io/library/import-2025-08-23@sha256:c8847e2b3d5b2d383051433eaa5c416cc21f412ef675b86989a3e913d210199e
+      lastState:
+        terminated:
+          containerID: containerd://e6a414617e2857ff640f0f7f1409c4f8eaa6bb5121ea1e77ca9120f39e5a9a17
+          exitCode: 0
+          finishedAt: "2025-08-23T09:19:25Z"
+          reason: Completed
+          startedAt: "2025-08-23T09:19:17Z"
+      name: api-gateway
+      ready: true
+      restartCount: 1
+      started: true
+      state:
+        running:
+          startedAt: "2025-08-23T09:19:58Z"
+    hostIP: 172.18.0.2
+    phase: Running
+    podIP: 10.244.0.23
+    podIPs:
+    - ip: 10.244.0.23
+    qosClass: BestEffort
+    startTime: "2025-08-23T09:19:16Z"
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    creationTimestamp: "2025-08-23T09:19:16Z"
+    generateName: product-service-b475b645d-
+    labels:
+      app: product-service
+      pod-template-hash: b475b645d
+    name: product-service-b475b645d-kt8rs
+    namespace: microservices
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: ReplicaSet
+      name: product-service-b475b645d
+      uid: 472cf07a-f3e7-43b5-8e85-a01fa3c04833
+    resourceVersion: "4510"
+    uid: 2b35af10-6c81-4ae7-b203-15039b739f39
+  spec:
+    containers:
+    - image: microservices-deployment-pipeline-product-service:latest
+      imagePullPolicy: Never
+      name: product-service
+      ports:
+      - containerPort: 8081
+        protocol: TCP
+      resources: {}
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      volumeMounts:
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-w8vxb
+        readOnly: true
+    dnsPolicy: ClusterFirst
+    enableServiceLinks: true
+    nodeName: microservices-control-plane
+    preemptionPolicy: PreemptLowerPriority
+    priority: 0
+    restartPolicy: Always
+    schedulerName: default-scheduler
+    securityContext: {}
+    serviceAccount: default
+    serviceAccountName: default
+    terminationGracePeriodSeconds: 30
+    tolerations:
+    - effect: NoExecute
+      key: node.kubernetes.io/not-ready
+      operator: Exists
+      tolerationSeconds: 300
+    - effect: NoExecute
+      key: node.kubernetes.io/unreachable
+      operator: Exists
+      tolerationSeconds: 300
+    volumes:
+    - name: kube-api-access-w8vxb
+      projected:
+        defaultMode: 420
+        sources:
+        - serviceAccountToken:
+            expirationSeconds: 3607
+            path: token
+        - configMap:
+            items:
+            - key: ca.crt
+              path: ca.crt
+            name: kube-root-ca.crt
+        - downwardAPI:
+            items:
+            - fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+              path: namespace
+  status:
+    conditions:
+    - lastProbeTime: null
+      lastTransitionTime: "2025-08-23T09:19:16Z"
+      status: "True"
+      type: Initialized
+    - lastProbeTime: null
+      lastTransitionTime: "2025-08-23T09:19:18Z"
+      status: "True"
+      type: Ready
+    - lastProbeTime: null
+      lastTransitionTime: "2025-08-23T09:19:18Z"
+      status: "True"
+      type: ContainersReady
+    - lastProbeTime: null
+      lastTransitionTime: "2025-08-23T09:19:16Z"
+      status: "True"
+      type: PodScheduled
+    containerStatuses:
+    - containerID: containerd://52cca8699a17d3f90824c4e383e35a22936737dc71c976f6906ffea694079c5b
+      image: docker.io/library/microservices-deployment-pipeline-product-service:latest
+      imageID: docker.io/library/import-2025-08-23@sha256:8a32e52de4b85edd4fef7981733844e9d66956ce0dd0be2b8050416fd1511a70
+      lastState: {}
+      name: product-service
+      ready: true
+      restartCount: 0
+      started: true
+      state:
+        running:
+          startedAt: "2025-08-23T09:19:17Z"
+    hostIP: 172.18.0.2
+    phase: Running
+    podIP: 10.244.0.28
+    podIPs:
+    - ip: 10.244.0.28
+    qosClass: BestEffort
+    startTime: "2025-08-23T09:19:16Z"
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    creationTimestamp: "2025-08-23T09:19:16Z"
+    generateName: product-service-b475b645d-
+    labels:
+      app: product-service
+      pod-template-hash: b475b645d
+    name: product-service-b475b645d-mt4mq
+    namespace: microservices
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: ReplicaSet
+      name: product-service-b475b645d
+      uid: 472cf07a-f3e7-43b5-8e85-a01fa3c04833
+    resourceVersion: "4507"
+    uid: 276ddfb7-6780-4302-a682-fad86c793ab2
+  spec:
+    containers:
+    - image: microservices-deployment-pipeline-product-service:latest
+      imagePullPolicy: Never
+      name: product-service
+      ports:
+      - containerPort: 8081
+        protocol: TCP
+      resources: {}
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      volumeMounts:
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-k6c78
+        readOnly: true
+    dnsPolicy: ClusterFirst
+    enableServiceLinks: true
+    nodeName: microservices-control-plane
+    preemptionPolicy: PreemptLowerPriority
+    priority: 0
+    restartPolicy: Always
+    schedulerName: default-scheduler
+    securityContext: {}
+    serviceAccount: default
+    serviceAccountName: default
+    terminationGracePeriodSeconds: 30
+    tolerations:
+    - effect: NoExecute
+      key: node.kubernetes.io/not-ready
+      operator: Exists
+      tolerationSeconds: 300
+    - effect: NoExecute
+      key: node.kubernetes.io/unreachable
+      operator: Exists
+      tolerationSeconds: 300
+    volumes:
+    - name: kube-api-access-k6c78
+      projected:
+        defaultMode: 420
+        sources:
+        - serviceAccountToken:
+            expirationSeconds: 3607
+            path: token
+        - configMap:
+            items:
+            - key: ca.crt
+              path: ca.crt
+            name: kube-root-ca.crt
+        - downwardAPI:
+            items:
+            - fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+              path: namespace
+  status:
+    conditions:
+    - lastProbeTime: null
+      lastTransitionTime: "2025-08-23T09:19:16Z"
+      status: "True"
+      type: Initialized
+    - lastProbeTime: null
+      lastTransitionTime: "2025-08-23T09:19:18Z"
+      status: "True"
+      type: Ready
+    - lastProbeTime: null
+      lastTransitionTime: "2025-08-23T09:19:18Z"
+      status: "True"
+      type: ContainersReady
+    - lastProbeTime: null
+      lastTransitionTime: "2025-08-23T09:19:16Z"
+      status: "True"
+      type: PodScheduled
+    containerStatuses:
+    - containerID: containerd://f045834dcb1c33206a9eb6f1aa80303d83b80735163c5c81673e29fdf0f62dc8
+      image: docker.io/library/microservices-deployment-pipeline-product-service:latest
+      imageID: docker.io/library/import-2025-08-23@sha256:8a32e52de4b85edd4fef7981733844e9d66956ce0dd0be2b8050416fd1511a70
+      lastState: {}
+      name: product-service
+      ready: true
+      restartCount: 0
+      started: true
+      state:
+        running:
+          startedAt: "2025-08-23T09:19:17Z"
+    hostIP: 172.18.0.2
+    phase: Running
+    podIP: 10.244.0.27
+    podIPs:
+    - ip: 10.244.0.27
+    qosClass: BestEffort
+    startTime: "2025-08-23T09:19:16Z"
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    creationTimestamp: "2025-08-23T09:19:16Z"
+    generateName: user-service-5844679d59-
+    labels:
+      app: user-service
+      pod-template-hash: 5844679d59
+    name: user-service-5844679d59-lm968
+    namespace: microservices
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: ReplicaSet
+      name: user-service-5844679d59
+      uid: cb61e3e6-92e5-4f0d-a621-b3e995b4cc90
+    resourceVersion: "4502"
+    uid: 9fa387b9-4689-4824-a856-2212a12ae4c2
+  spec:
+    containers:
+    - image: microservices-deployment-pipeline-user-service:latest
+      imagePullPolicy: Never
+      name: user-service
+      ports:
+      - containerPort: 8000
+        protocol: TCP
+      resources: {}
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      volumeMounts:
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-96f2t
+        readOnly: true
+    dnsPolicy: ClusterFirst
+    enableServiceLinks: true
+    nodeName: microservices-control-plane
+    preemptionPolicy: PreemptLowerPriority
+    priority: 0
+    restartPolicy: Always
+    schedulerName: default-scheduler
+    securityContext: {}
+    serviceAccount: default
+    serviceAccountName: default
+    terminationGracePeriodSeconds: 30
+    tolerations:
+    - effect: NoExecute
+      key: node.kubernetes.io/not-ready
+      operator: Exists
+      tolerationSeconds: 300
+    - effect: NoExecute
+      key: node.kubernetes.io/unreachable
+      operator: Exists
+      tolerationSeconds: 300
+    volumes:
+    - name: kube-api-access-96f2t
+      projected:
+        defaultMode: 420
+        sources:
+        - serviceAccountToken:
+            expirationSeconds: 3607
+            path: token
+        - configMap:
+            items:
+            - key: ca.crt
+              path: ca.crt
+            name: kube-root-ca.crt
+        - downwardAPI:
+            items:
+            - fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+              path: namespace
+  status:
+    conditions:
+    - lastProbeTime: null
+      lastTransitionTime: "2025-08-23T09:19:16Z"
+      status: "True"
+      type: Initialized
+    - lastProbeTime: null
+      lastTransitionTime: "2025-08-23T09:19:18Z"
+      status: "True"
+      type: Ready
+    - lastProbeTime: null
+      lastTransitionTime: "2025-08-23T09:19:18Z"
+      status: "True"
+      type: ContainersReady
+    - lastProbeTime: null
+      lastTransitionTime: "2025-08-23T09:19:16Z"
+      status: "True"
+      type: PodScheduled
+    containerStatuses:
+    - containerID: containerd://08b4459f416ffca593291943233db837f0e8174586c61103e74ae5d2d2cbdba5
+      image: docker.io/library/microservices-deployment-pipeline-user-service:latest
+      imageID: docker.io/library/import-2025-08-23@sha256:aebf00e06b40368812a1c74628204967aaf05a41ae362034e1667fa4f7ea1aca
+      lastState: {}
+      name: user-service
+      ready: true
+      restartCount: 0
+      started: true
+      state:
+        running:
+          startedAt: "2025-08-23T09:19:17Z"
+    hostIP: 172.18.0.2
+    phase: Running
+    podIP: 10.244.0.26
+    podIPs:
+    - ip: 10.244.0.26
+    qosClass: BestEffort
+    startTime: "2025-08-23T09:19:16Z"
+- apiVersion: v1
+  kind: Pod
+  metadata:
+    creationTimestamp: "2025-08-23T09:19:16Z"
+    generateName: user-service-5844679d59-
+    labels:
+      app: user-service
+      pod-template-hash: 5844679d59
+    name: user-service-5844679d59-rc2xm
+    namespace: microservices
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: ReplicaSet
+      name: user-service-5844679d59
+      uid: cb61e3e6-92e5-4f0d-a621-b3e995b4cc90
+    resourceVersion: "4516"
+    uid: 38e3221a-6114-473e-baaa-07df67bbc1ce
+  spec:
+    containers:
+    - image: microservices-deployment-pipeline-user-service:latest
+      imagePullPolicy: Never
+      name: user-service
+      ports:
+      - containerPort: 8000
+        protocol: TCP
+      resources: {}
+      terminationMessagePath: /dev/termination-log
+      terminationMessagePolicy: File
+      volumeMounts:
+      - mountPath: /var/run/secrets/kubernetes.io/serviceaccount
+        name: kube-api-access-z5xsw
+        readOnly: true
+    dnsPolicy: ClusterFirst
+    enableServiceLinks: true
+    nodeName: microservices-control-plane
+    preemptionPolicy: PreemptLowerPriority
+    priority: 0
+    restartPolicy: Always
+    schedulerName: default-scheduler
+    securityContext: {}
+    serviceAccount: default
+    serviceAccountName: default
+    terminationGracePeriodSeconds: 30
+    tolerations:
+    - effect: NoExecute
+      key: node.kubernetes.io/not-ready
+      operator: Exists
+      tolerationSeconds: 300
+    - effect: NoExecute
+      key: node.kubernetes.io/unreachable
+      operator: Exists
+      tolerationSeconds: 300
+    volumes:
+    - name: kube-api-access-z5xsw
+      projected:
+        defaultMode: 420
+        sources:
+        - serviceAccountToken:
+            expirationSeconds: 3607
+            path: token
+        - configMap:
+            items:
+            - key: ca.crt
+              path: ca.crt
+            name: kube-root-ca.crt
+        - downwardAPI:
+            items:
+            - fieldRef:
+                apiVersion: v1
+                fieldPath: metadata.namespace
+              path: namespace
+  status:
+    conditions:
+    - lastProbeTime: null
+      lastTransitionTime: "2025-08-23T09:19:16Z"
+      status: "True"
+      type: Initialized
+    - lastProbeTime: null
+      lastTransitionTime: "2025-08-23T09:19:18Z"
+      status: "True"
+      type: Ready
+    - lastProbeTime: null
+      lastTransitionTime: "2025-08-23T09:19:18Z"
+      status: "True"
+      type: ContainersReady
+    - lastProbeTime: null
+      lastTransitionTime: "2025-08-23T09:19:16Z"
+      status: "True"
+      type: PodScheduled
+    containerStatuses:
+    - containerID: containerd://f9a2f3b3875fcaead3dc1505033c1302a3f8439d23bcaf157eed7b83e799c121
+      image: docker.io/library/microservices-deployment-pipeline-user-service:latest
+      imageID: docker.io/library/import-2025-08-23@sha256:aebf00e06b40368812a1c74628204967aaf05a41ae362034e1667fa4f7ea1aca
+      lastState: {}
+      name: user-service
+      ready: true
+      restartCount: 0
+      started: true
+      state:
+        running:
+          startedAt: "2025-08-23T09:19:17Z"
+    hostIP: 172.18.0.2
+    phase: Running
+    podIP: 10.244.0.25
+    podIPs:
+    - ip: 10.244.0.25
+    qosClass: BestEffort
+    startTime: "2025-08-23T09:19:16Z"
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    annotations:
+      deployment.kubernetes.io/revision: "1"
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"name":"api-gateway","namespace":"microservices"},"spec":{"replicas":2,"selector":{"matchLabels":{"app":"api-gateway"}},"template":{"metadata":{"labels":{"app":"api-gateway"}},"spec":{"containers":[{"image":"microservices-deployment-pipeline-api-gateway:latest","imagePullPolicy":"Never","name":"api-gateway","ports":[{"containerPort":8080}]}]}}}}
+    creationTimestamp: "2025-08-23T09:19:16Z"
+    generation: 1
+    name: api-gateway
+    namespace: microservices
+    resourceVersion: "4668"
+    uid: 23610eb5-42fd-42a2-8d1d-25496a783e10
+  spec:
+    progressDeadlineSeconds: 600
+    replicas: 2
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app: api-gateway
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: api-gateway
+      spec:
+        containers:
+        - image: microservices-deployment-pipeline-api-gateway:latest
+          imagePullPolicy: Never
+          name: api-gateway
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+  status:
+    availableReplicas: 2
+    conditions:
+    - lastTransitionTime: "2025-08-23T09:19:16Z"
+      lastUpdateTime: "2025-08-23T09:19:18Z"
+      message: ReplicaSet "api-gateway-7dc9d69f5c" has successfully progressed.
+      reason: NewReplicaSetAvailable
+      status: "True"
+      type: Progressing
+    - lastTransitionTime: "2025-08-23T09:19:58Z"
+      lastUpdateTime: "2025-08-23T09:19:58Z"
+      message: Deployment has minimum availability.
+      reason: MinimumReplicasAvailable
+      status: "True"
+      type: Available
+    observedGeneration: 1
+    readyReplicas: 2
+    replicas: 2
+    updatedReplicas: 2
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    annotations:
+      deployment.kubernetes.io/revision: "1"
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"name":"product-service","namespace":"microservices"},"spec":{"replicas":2,"selector":{"matchLabels":{"app":"product-service"}},"template":{"metadata":{"labels":{"app":"product-service"}},"spec":{"containers":[{"image":"microservices-deployment-pipeline-product-service:latest","imagePullPolicy":"Never","name":"product-service","ports":[{"containerPort":8081}]}]}}}}
+    creationTimestamp: "2025-08-23T09:19:16Z"
+    generation: 1
+    name: product-service
+    namespace: microservices
+    resourceVersion: "4514"
+    uid: 37ccd784-2fc2-43cf-9a23-20acf41f46b4
+  spec:
+    progressDeadlineSeconds: 600
+    replicas: 2
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app: product-service
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: product-service
+      spec:
+        containers:
+        - image: microservices-deployment-pipeline-product-service:latest
+          imagePullPolicy: Never
+          name: product-service
+          ports:
+          - containerPort: 8081
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+  status:
+    availableReplicas: 2
+    conditions:
+    - lastTransitionTime: "2025-08-23T09:19:18Z"
+      lastUpdateTime: "2025-08-23T09:19:18Z"
+      message: Deployment has minimum availability.
+      reason: MinimumReplicasAvailable
+      status: "True"
+      type: Available
+    - lastTransitionTime: "2025-08-23T09:19:16Z"
+      lastUpdateTime: "2025-08-23T09:19:18Z"
+      message: ReplicaSet "product-service-b475b645d" has successfully progressed.
+      reason: NewReplicaSetAvailable
+      status: "True"
+      type: Progressing
+    observedGeneration: 1
+    readyReplicas: 2
+    replicas: 2
+    updatedReplicas: 2
+- apiVersion: apps/v1
+  kind: Deployment
+  metadata:
+    annotations:
+      deployment.kubernetes.io/revision: "1"
+      kubectl.kubernetes.io/last-applied-configuration: |
+        {"apiVersion":"apps/v1","kind":"Deployment","metadata":{"annotations":{},"name":"user-service","namespace":"microservices"},"spec":{"replicas":2,"selector":{"matchLabels":{"app":"user-service"}},"template":{"metadata":{"labels":{"app":"user-service"}},"spec":{"containers":[{"image":"microservices-deployment-pipeline-user-service:latest","imagePullPolicy":"Never","name":"user-service","ports":[{"containerPort":8000}]}]}}}}
+    creationTimestamp: "2025-08-23T09:19:16Z"
+    generation: 1
+    name: user-service
+    namespace: microservices
+    resourceVersion: "4519"
+    uid: b3e737de-1496-46a7-b46a-ddea0cc6726a
+  spec:
+    progressDeadlineSeconds: 600
+    replicas: 2
+    revisionHistoryLimit: 10
+    selector:
+      matchLabels:
+        app: user-service
+    strategy:
+      rollingUpdate:
+        maxSurge: 25%
+        maxUnavailable: 25%
+      type: RollingUpdate
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: user-service
+      spec:
+        containers:
+        - image: microservices-deployment-pipeline-user-service:latest
+          imagePullPolicy: Never
+          name: user-service
+          ports:
+          - containerPort: 8000
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+  status:
+    availableReplicas: 2
+    conditions:
+    - lastTransitionTime: "2025-08-23T09:19:18Z"
+      lastUpdateTime: "2025-08-23T09:19:18Z"
+      message: Deployment has minimum availability.
+      reason: MinimumReplicasAvailable
+      status: "True"
+      type: Available
+    - lastTransitionTime: "2025-08-23T09:19:16Z"
+      lastUpdateTime: "2025-08-23T09:19:18Z"
+      message: ReplicaSet "user-service-5844679d59" has successfully progressed.
+      reason: NewReplicaSetAvailable
+      status: "True"
+      type: Progressing
+    observedGeneration: 1
+    readyReplicas: 2
+    replicas: 2
+    updatedReplicas: 2
+- apiVersion: apps/v1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "2"
+      deployment.kubernetes.io/max-replicas: "3"
+      deployment.kubernetes.io/revision: "1"
+    creationTimestamp: "2025-08-23T09:19:16Z"
+    generation: 1
+    labels:
+      app: api-gateway
+      pod-template-hash: 7dc9d69f5c
+    name: api-gateway-7dc9d69f5c
+    namespace: microservices
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: api-gateway
+      uid: 23610eb5-42fd-42a2-8d1d-25496a783e10
+    resourceVersion: "4667"
+    uid: fb791d8c-b5bf-422c-a246-11e32742a024
+  spec:
+    replicas: 2
+    selector:
+      matchLabels:
+        app: api-gateway
+        pod-template-hash: 7dc9d69f5c
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: api-gateway
+          pod-template-hash: 7dc9d69f5c
+      spec:
+        containers:
+        - image: microservices-deployment-pipeline-api-gateway:latest
+          imagePullPolicy: Never
+          name: api-gateway
+          ports:
+          - containerPort: 8080
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+  status:
+    availableReplicas: 2
+    fullyLabeledReplicas: 2
+    observedGeneration: 1
+    readyReplicas: 2
+    replicas: 2
+- apiVersion: apps/v1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "2"
+      deployment.kubernetes.io/max-replicas: "3"
+      deployment.kubernetes.io/revision: "1"
+    creationTimestamp: "2025-08-23T09:19:16Z"
+    generation: 1
+    labels:
+      app: product-service
+      pod-template-hash: b475b645d
+    name: product-service-b475b645d
+    namespace: microservices
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: product-service
+      uid: 37ccd784-2fc2-43cf-9a23-20acf41f46b4
+    resourceVersion: "4512"
+    uid: 472cf07a-f3e7-43b5-8e85-a01fa3c04833
+  spec:
+    replicas: 2
+    selector:
+      matchLabels:
+        app: product-service
+        pod-template-hash: b475b645d
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: product-service
+          pod-template-hash: b475b645d
+      spec:
+        containers:
+        - image: microservices-deployment-pipeline-product-service:latest
+          imagePullPolicy: Never
+          name: product-service
+          ports:
+          - containerPort: 8081
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+  status:
+    availableReplicas: 2
+    fullyLabeledReplicas: 2
+    observedGeneration: 1
+    readyReplicas: 2
+    replicas: 2
+- apiVersion: apps/v1
+  kind: ReplicaSet
+  metadata:
+    annotations:
+      deployment.kubernetes.io/desired-replicas: "2"
+      deployment.kubernetes.io/max-replicas: "3"
+      deployment.kubernetes.io/revision: "1"
+    creationTimestamp: "2025-08-23T09:19:16Z"
+    generation: 1
+    labels:
+      app: user-service
+      pod-template-hash: 5844679d59
+    name: user-service-5844679d59
+    namespace: microservices
+    ownerReferences:
+    - apiVersion: apps/v1
+      blockOwnerDeletion: true
+      controller: true
+      kind: Deployment
+      name: user-service
+      uid: b3e737de-1496-46a7-b46a-ddea0cc6726a
+    resourceVersion: "4518"
+    uid: cb61e3e6-92e5-4f0d-a621-b3e995b4cc90
+  spec:
+    replicas: 2
+    selector:
+      matchLabels:
+        app: user-service
+        pod-template-hash: 5844679d59
+    template:
+      metadata:
+        creationTimestamp: null
+        labels:
+          app: user-service
+          pod-template-hash: 5844679d59
+      spec:
+        containers:
+        - image: microservices-deployment-pipeline-user-service:latest
+          imagePullPolicy: Never
+          name: user-service
+          ports:
+          - containerPort: 8000
+            protocol: TCP
+          resources: {}
+          terminationMessagePath: /dev/termination-log
+          terminationMessagePolicy: File
+        dnsPolicy: ClusterFirst
+        restartPolicy: Always
+        schedulerName: default-scheduler
+        securityContext: {}
+        terminationGracePeriodSeconds: 30
+  status:
+    availableReplicas: 2
+    fullyLabeledReplicas: 2
+    observedGeneration: 1
+    readyReplicas: 2
+    replicas: 2
+kind: List
+metadata:
+  resourceVersion: ""

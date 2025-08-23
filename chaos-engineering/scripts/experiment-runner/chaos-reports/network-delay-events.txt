@@ -1,0 +1,264 @@
+LAST SEEN   TYPE      REASON              OBJECT                                            MESSAGE
+16m         Normal    Scheduled           pod/api-gateway-5cd64c744c-b77qs                  Successfully assigned microservices/api-gateway-5cd64c744c-b77qs to microservices-control-plane
+16m         Normal    SuccessfulCreate    replicaset/api-gateway-5cd64c744c                 Created pod: api-gateway-5cd64c744c-b77qs
+16m         Normal    ScalingReplicaSet   deployment/api-gateway                            Scaled up replica set api-gateway-5cd64c744c to 1
+16m         Normal    ScalingReplicaSet   deployment/user-service                           Scaled up replica set user-service-85c9759b89 to 1
+16m         Normal    SuccessfulCreate    replicaset/user-service-85c9759b89                Created pod: user-service-85c9759b89-xsncc
+16m         Normal    Scheduled           pod/user-service-85c9759b89-xsncc                 Successfully assigned microservices/user-service-85c9759b89-xsncc to microservices-control-plane
+15m         Normal    Scheduled           pod/product-service-646d4b75cc-zlgdq              Successfully assigned microservices/product-service-646d4b75cc-zlgdq to microservices-control-plane
+15m         Normal    ScalingReplicaSet   deployment/product-service                        Scaled up replica set product-service-646d4b75cc to 1
+15m         Normal    SuccessfulCreate    replicaset/product-service-646d4b75cc             Created pod: product-service-646d4b75cc-zlgdq
+15m         Normal    Pulling             pod/product-service-646d4b75cc-zlgdq              Pulling image "microservices-deployment-pipeline-product-service:latest"
+15m         Warning   Failed              pod/product-service-646d4b75cc-zlgdq              Failed to pull image "microservices-deployment-pipeline-product-service:latest": rpc error: code = Unknown desc = failed to pull and unpack image "docker.io/library/microservices-deployment-pipeline-product-service:latest": failed to resolve reference "docker.io/library/microservices-deployment-pipeline-product-service:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
+15m         Warning   Failed              pod/product-service-646d4b75cc-zlgdq              Error: ErrImagePull
+14m         Normal    BackOff             pod/api-gateway-5cd64c744c-b77qs                  Back-off pulling image "microservices-deployment-pipeline-api-gateway:latest"
+14m         Warning   Failed              pod/api-gateway-5cd64c744c-b77qs                  Error: ImagePullBackOff
+14m         Warning   Failed              pod/user-service-85c9759b89-xsncc                 Error: ImagePullBackOff
+14m         Normal    BackOff             pod/user-service-85c9759b89-xsncc                 Back-off pulling image "microservices-deployment-pipeline-user-service:latest"
+14m         Normal    Pulling             pod/api-gateway-5cd64c744c-b77qs                  Pulling image "microservices-deployment-pipeline-api-gateway:latest"
+14m         Warning   Failed              pod/api-gateway-5cd64c744c-b77qs                  Error: ErrImagePull
+14m         Warning   Failed              pod/api-gateway-5cd64c744c-b77qs                  Failed to pull image "microservices-deployment-pipeline-api-gateway:latest": rpc error: code = Unknown desc = failed to pull and unpack image "docker.io/library/microservices-deployment-pipeline-api-gateway:latest": failed to resolve reference "docker.io/library/microservices-deployment-pipeline-api-gateway:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
+14m         Normal    Pulling             pod/user-service-85c9759b89-xsncc                 Pulling image "microservices-deployment-pipeline-user-service:latest"
+14m         Warning   Failed              pod/user-service-85c9759b89-xsncc                 Failed to pull image "microservices-deployment-pipeline-user-service:latest": rpc error: code = Unknown desc = failed to pull and unpack image "docker.io/library/microservices-deployment-pipeline-user-service:latest": failed to resolve reference "docker.io/library/microservices-deployment-pipeline-user-service:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
+14m         Warning   Failed              pod/user-service-85c9759b89-xsncc                 Error: ErrImagePull
+14m         Normal    BackOff             pod/product-service-646d4b75cc-zlgdq              Back-off pulling image "microservices-deployment-pipeline-product-service:latest"
+14m         Warning   Failed              pod/product-service-646d4b75cc-zlgdq              Error: ImagePullBackOff
+14m         Normal    Scheduled           pod/api-gateway-5cd64c744c-hptxh                  Successfully assigned microservices/api-gateway-5cd64c744c-hptxh to microservices-control-plane
+14m         Normal    SuccessfulCreate    replicaset/api-gateway-5cd64c744c                 Created pod: api-gateway-5cd64c744c-hptxh
+14m         Normal    ScalingReplicaSet   deployment/api-gateway                            Scaled up replica set api-gateway-5cd64c744c to 1
+14m         Normal    SuccessfulCreate    replicaset/user-service-85c9759b89                Created pod: user-service-85c9759b89-cn8cx
+14m         Normal    Scheduled           pod/user-service-85c9759b89-cn8cx                 Successfully assigned microservices/user-service-85c9759b89-cn8cx to microservices-control-plane
+14m         Normal    ScalingReplicaSet   deployment/user-service                           Scaled up replica set user-service-85c9759b89 to 1
+13m         Normal    Scheduled           pod/product-service-646d4b75cc-k4tfk              Successfully assigned microservices/product-service-646d4b75cc-k4tfk to microservices-control-plane
+13m         Normal    ScalingReplicaSet   deployment/product-service                        Scaled up replica set product-service-646d4b75cc to 1
+13m         Normal    SuccessfulCreate    replicaset/product-service-646d4b75cc             Created pod: product-service-646d4b75cc-k4tfk
+13m         Normal    SuccessfulCreate    replicaset/order-service-6967db554b               Created pod: order-service-6967db554b-2tq7x
+13m         Normal    ScalingReplicaSet   deployment/order-service                          Scaled up replica set order-service-6967db554b to 1
+13m         Normal    Scheduled           pod/order-service-6967db554b-2tq7x                Successfully assigned microservices/order-service-6967db554b-2tq7x to microservices-control-plane
+12m         Warning   Failed              pod/api-gateway-5cd64c744c-hptxh                  Error: ErrImagePull
+12m         Warning   Failed              pod/api-gateway-5cd64c744c-hptxh                  Failed to pull image "microservices-deployment-pipeline-api-gateway:latest": rpc error: code = Unknown desc = failed to pull and unpack image "docker.io/library/microservices-deployment-pipeline-api-gateway:latest": failed to resolve reference "docker.io/library/microservices-deployment-pipeline-api-gateway:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
+12m         Normal    Pulling             pod/api-gateway-5cd64c744c-hptxh                  Pulling image "microservices-deployment-pipeline-api-gateway:latest"
+12m         Normal    Pulling             pod/user-service-85c9759b89-cn8cx                 Pulling image "microservices-deployment-pipeline-user-service:latest"
+12m         Warning   Failed              pod/user-service-85c9759b89-cn8cx                 Error: ErrImagePull
+12m         Warning   Failed              pod/user-service-85c9759b89-cn8cx                 Failed to pull image "microservices-deployment-pipeline-user-service:latest": rpc error: code = Unknown desc = failed to pull and unpack image "docker.io/library/microservices-deployment-pipeline-user-service:latest": failed to resolve reference "docker.io/library/microservices-deployment-pipeline-user-service:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
+12m         Warning   Failed              pod/product-service-646d4b75cc-k4tfk              Failed to pull image "microservices-deployment-pipeline-product-service:latest": rpc error: code = Unknown desc = failed to pull and unpack image "docker.io/library/microservices-deployment-pipeline-product-service:latest": failed to resolve reference "docker.io/library/microservices-deployment-pipeline-product-service:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
+12m         Normal    Pulling             pod/product-service-646d4b75cc-k4tfk              Pulling image "microservices-deployment-pipeline-product-service:latest"
+12m         Warning   Failed              pod/product-service-646d4b75cc-k4tfk              Error: ErrImagePull
+12m         Warning   Failed              pod/order-service-6967db554b-2tq7x                Error: ErrImagePull
+12m         Warning   Failed              pod/api-gateway-5cd64c744c-hptxh                  Error: ImagePullBackOff
+12m         Normal    Pulling             pod/order-service-6967db554b-2tq7x                Pulling image "microservices-deployment-pipeline-order-service:latest"
+12m         Warning   Failed              pod/order-service-6967db554b-2tq7x                Failed to pull image "microservices-deployment-pipeline-order-service:latest": rpc error: code = Unknown desc = failed to pull and unpack image "docker.io/library/microservices-deployment-pipeline-order-service:latest": failed to resolve reference "docker.io/library/microservices-deployment-pipeline-order-service:latest": pull access denied, repository does not exist or may require authorization: server message: insufficient_scope: authorization failed
+12m         Warning   Failed              pod/user-service-85c9759b89-cn8cx                 Error: ImagePullBackOff
+11m         Warning   Failed              pod/product-service-646d4b75cc-k4tfk              Error: ImagePullBackOff
+11m         Warning   Failed              pod/order-service-6967db554b-2tq7x                Error: ImagePullBackOff
+11m         Normal    BackOff             pod/api-gateway-5cd64c744c-hptxh                  Back-off pulling image "microservices-deployment-pipeline-api-gateway:latest"
+11m         Normal    BackOff             pod/user-service-85c9759b89-cn8cx                 Back-off pulling image "microservices-deployment-pipeline-user-service:latest"
+11m         Normal    BackOff             pod/product-service-646d4b75cc-k4tfk              Back-off pulling image "microservices-deployment-pipeline-product-service:latest"
+11m         Normal    BackOff             pod/order-service-6967db554b-2tq7x                Back-off pulling image "microservices-deployment-pipeline-order-service:latest"
+9m35s       Normal    Scheduled           pod/product-service-b475b645d-kt8rs               Successfully assigned microservices/product-service-b475b645d-kt8rs to microservices-control-plane
+9m35s       Normal    ScalingReplicaSet   deployment/api-gateway                            Scaled up replica set api-gateway-7dc9d69f5c to 2
+9m35s       Normal    Scheduled           pod/api-gateway-7dc9d69f5c-rj5xz                  Successfully assigned microservices/api-gateway-7dc9d69f5c-rj5xz to microservices-control-plane
+9m35s       Normal    Scheduled           pod/user-service-5844679d59-lm968                 Successfully assigned microservices/user-service-5844679d59-lm968 to microservices-control-plane
+9m35s       Normal    Scheduled           pod/api-gateway-7dc9d69f5c-t8dqz                  Successfully assigned microservices/api-gateway-7dc9d69f5c-t8dqz to microservices-control-plane
+9m35s       Normal    SuccessfulCreate    replicaset/product-service-b475b645d              Created pod: product-service-b475b645d-kt8rs
+9m35s       Normal    SuccessfulCreate    replicaset/product-service-b475b645d              Created pod: product-service-b475b645d-mt4mq
+9m35s       Normal    Scheduled           pod/product-service-b475b645d-mt4mq               Successfully assigned microservices/product-service-b475b645d-mt4mq to microservices-control-plane
+9m35s       Normal    SuccessfulCreate    replicaset/api-gateway-7dc9d69f5c                 Created pod: api-gateway-7dc9d69f5c-rj5xz
+9m35s       Normal    SuccessfulCreate    replicaset/api-gateway-7dc9d69f5c                 Created pod: api-gateway-7dc9d69f5c-t8dqz
+9m35s       Normal    SuccessfulCreate    replicaset/user-service-5844679d59                Created pod: user-service-5844679d59-rc2xm
+9m35s       Normal    ScalingReplicaSet   deployment/user-service                           Scaled up replica set user-service-5844679d59 to 2
+9m35s       Normal    Scheduled           pod/user-service-5844679d59-rc2xm                 Successfully assigned microservices/user-service-5844679d59-rc2xm to microservices-control-plane
+9m35s       Normal    SuccessfulCreate    replicaset/user-service-5844679d59                Created pod: user-service-5844679d59-lm968
+9m35s       Normal    ScalingReplicaSet   deployment/product-service                        Scaled up replica set product-service-b475b645d to 2
+9m34s       Normal    Created             pod/user-service-5844679d59-rc2xm                 Created container user-service
+9m34s       Normal    Created             pod/product-service-b475b645d-kt8rs               Created container product-service
+9m34s       Normal    Pulled              pod/product-service-b475b645d-mt4mq               Container image "microservices-deployment-pipeline-product-service:latest" already present on machine
+9m34s       Normal    Created             pod/product-service-b475b645d-mt4mq               Created container product-service
+9m34s       Normal    Started             pod/product-service-b475b645d-mt4mq               Started container product-service
+9m34s       Normal    Started             pod/product-service-b475b645d-kt8rs               Started container product-service
+9m34s       Normal    Started             pod/user-service-5844679d59-lm968                 Started container user-service
+9m34s       Normal    Created             pod/user-service-5844679d59-lm968                 Created container user-service
+9m34s       Normal    Pulled              pod/user-service-5844679d59-lm968                 Container image "microservices-deployment-pipeline-user-service:latest" already present on machine
+9m34s       Normal    Started             pod/user-service-5844679d59-rc2xm                 Started container user-service
+9m34s       Normal    Pulled              pod/product-service-b475b645d-kt8rs               Container image "microservices-deployment-pipeline-product-service:latest" already present on machine
+9m34s       Normal    Pulled              pod/user-service-5844679d59-rc2xm                 Container image "microservices-deployment-pipeline-user-service:latest" already present on machine
+9m26s       Normal    Killing             pod/api-gateway-7dc9d69f5c-rj5xz                  Container api-gateway definition changed, will be restarted
+9m26s       Normal    Killing             pod/api-gateway-7dc9d69f5c-t8dqz                  Container api-gateway definition changed, will be restarted
+8m59s       Warning   Failed              pod/api-gateway-7dc9d69f5c-t8dqz                  Error: ErrImageNeverPull
+8m59s       Warning   ErrImageNeverPull   pod/api-gateway-7dc9d69f5c-t8dqz                  Container image "gcr.io/google-containers/pause:latest" is not present with pull policy of Never
+8m57s       Warning   Failed              pod/api-gateway-7dc9d69f5c-rj5xz                  Error: ErrImageNeverPull
+8m57s       Warning   ErrImageNeverPull   pod/api-gateway-7dc9d69f5c-rj5xz                  Container image "gcr.io/google-containers/pause:latest" is not present with pull policy of Never
+8m53s       Normal    Pulled              pod/api-gateway-7dc9d69f5c-t8dqz                  Container image "microservices-deployment-pipeline-api-gateway:latest" already present on machine
+8m53s       Normal    Started             pod/api-gateway-7dc9d69f5c-rj5xz                  Started container api-gateway
+8m53s       Normal    Created             pod/api-gateway-7dc9d69f5c-rj5xz                  Created container api-gateway
+8m53s       Normal    Pulled              pod/api-gateway-7dc9d69f5c-rj5xz                  Container image "microservices-deployment-pipeline-api-gateway:latest" already present on machine
+8m53s       Normal    Started             pod/api-gateway-7dc9d69f5c-t8dqz                  Started container api-gateway
+8m53s       Normal    Created             pod/api-gateway-7dc9d69f5c-t8dqz                  Created container api-gateway
+76s         Warning   Failed              podnetworkchaos/api-gateway-7dc9d69f5c-rj5xz      Failed to set ipsets: failed to apply for pod microservices/api-gateway-7dc9d69f5c-rj5xz: unable to flush ip sets for pod api-gateway-7dc9d69f5c-rj5xz
+76s         Warning   Failed              podnetworkchaos/user-service-5844679d59-lm968     Failed to set ipsets: failed to apply for pod microservices/user-service-5844679d59-lm968: unable to flush ip sets for pod user-service-5844679d59-lm968
+76s         Warning   Failed              podnetworkchaos/api-gateway-7dc9d69f5c-rj5xz      Failed to set ipsets: failed to apply for pod microservices/api-gateway-7dc9d69f5c-rj5xz: unable to flush ip sets for pod api-gateway-7dc9d69f5c-rj5xz
+76s         Normal    Updated             podnetworkchaos/api-gateway-7dc9d69f5c-t8dqz      Successfully update ObservedGeneration and FailedMessage of resource
+76s         Warning   Failed              podnetworkchaos/api-gateway-7dc9d69f5c-t8dqz      Failed to set ipsets: failed to apply for pod microservices/api-gateway-7dc9d69f5c-t8dqz: unable to flush ip sets for pod api-gateway-7dc9d69f5c-t8dqz
+76s         Warning   Failed              podnetworkchaos/api-gateway-7dc9d69f5c-rj5xz      Failed to set ipsets: failed to apply for pod microservices/api-gateway-7dc9d69f5c-rj5xz: unable to flush ip sets for pod api-gateway-7dc9d69f5c-rj5xz
+76s         Warning   Failed              podnetworkchaos/api-gateway-7dc9d69f5c-t8dqz      Failed to set ipsets: failed to apply for pod microservices/api-gateway-7dc9d69f5c-t8dqz: unable to flush ip sets for pod api-gateway-7dc9d69f5c-t8dqz
+76s         Normal    Updated             podnetworkchaos/api-gateway-7dc9d69f5c-t8dqz      Successfully update ObservedGeneration and FailedMessage of resource
+76s         Warning   Failed              podnetworkchaos/api-gateway-7dc9d69f5c-t8dqz      Failed to set ipsets: failed to apply for pod microservices/api-gateway-7dc9d69f5c-t8dqz: unable to flush ip sets for pod api-gateway-7dc9d69f5c-t8dqz
+76s         Normal    Updated             podnetworkchaos/api-gateway-7dc9d69f5c-t8dqz      Successfully update ObservedGeneration and FailedMessage of resource
+76s         Warning   Failed              podnetworkchaos/user-service-5844679d59-rc2xm     Failed to set ipsets: failed to apply for pod microservices/user-service-5844679d59-rc2xm: unable to flush ip sets for pod user-service-5844679d59-rc2xm
+76s         Normal    Updated             podnetworkchaos/api-gateway-7dc9d69f5c-rj5xz      Successfully update ObservedGeneration and FailedMessage of resource
+76s         Normal    Updated             podnetworkchaos/user-service-5844679d59-rc2xm     Successfully update ObservedGeneration and FailedMessage of resource
+76s         Warning   Failed              podnetworkchaos/user-service-5844679d59-lm968     Failed to set ipsets: failed to apply for pod microservices/user-service-5844679d59-lm968: unable to flush ip sets for pod user-service-5844679d59-lm968
+76s         Normal    Updated             podnetworkchaos/api-gateway-7dc9d69f5c-rj5xz      Successfully update ObservedGeneration and FailedMessage of resource
+76s         Warning   Failed              podnetworkchaos/user-service-5844679d59-rc2xm     Failed to set ipsets: failed to apply for pod microservices/user-service-5844679d59-rc2xm: unable to flush ip sets for pod user-service-5844679d59-rc2xm
+76s         Normal    Updated             podnetworkchaos/user-service-5844679d59-lm968     Successfully update ObservedGeneration and FailedMessage of resource
+76s         Warning   Failed              podnetworkchaos/user-service-5844679d59-lm968     Failed to set ipsets: failed to apply for pod microservices/user-service-5844679d59-lm968: unable to flush ip sets for pod user-service-5844679d59-lm968
+76s         Normal    Updated             podnetworkchaos/user-service-5844679d59-lm968     Successfully update ObservedGeneration and FailedMessage of resource
+76s         Normal    Updated             podnetworkchaos/api-gateway-7dc9d69f5c-rj5xz      Successfully update ObservedGeneration and FailedMessage of resource
+76s         Warning   Failed              podnetworkchaos/product-service-b475b645d-kt8rs   Failed to set ipsets: failed to apply for pod microservices/product-service-b475b645d-kt8rs: unable to flush ip sets for pod product-service-b475b645d-kt8rs
+76s         Normal    Updated             podnetworkchaos/product-service-b475b645d-kt8rs   Successfully update ObservedGeneration and FailedMessage of resource
+76s         Warning   Failed              podnetworkchaos/product-service-b475b645d-kt8rs   Failed to set ipsets: failed to apply for pod microservices/product-service-b475b645d-kt8rs: unable to flush ip sets for pod product-service-b475b645d-kt8rs
+76s         Normal    Updated             podnetworkchaos/product-service-b475b645d-kt8rs   Successfully update ObservedGeneration and FailedMessage of resource
+76s         Warning   Failed              podnetworkchaos/product-service-b475b645d-kt8rs   Failed to set ipsets: failed to apply for pod microservices/product-service-b475b645d-kt8rs: unable to flush ip sets for pod product-service-b475b645d-kt8rs
+76s         Normal    Updated             podnetworkchaos/product-service-b475b645d-kt8rs   Successfully update ObservedGeneration and FailedMessage of resource
+76s         Normal    Updated             podnetworkchaos/user-service-5844679d59-rc2xm     Successfully update ObservedGeneration and FailedMessage of resource
+76s         Warning   Failed              podnetworkchaos/user-service-5844679d59-rc2xm     Failed to set ipsets: failed to apply for pod microservices/user-service-5844679d59-rc2xm: unable to flush ip sets for pod user-service-5844679d59-rc2xm
+76s         Normal    Updated             podnetworkchaos/product-service-b475b645d-mt4mq   Successfully update ObservedGeneration and FailedMessage of resource
+76s         Warning   Failed              podnetworkchaos/product-service-b475b645d-mt4mq   Failed to set ipsets: failed to apply for pod microservices/product-service-b475b645d-mt4mq: unable to flush ip sets for pod product-service-b475b645d-mt4mq
+76s         Normal    Updated             podnetworkchaos/product-service-b475b645d-mt4mq   Successfully update ObservedGeneration and FailedMessage of resource
+76s         Warning   Failed              podnetworkchaos/product-service-b475b645d-mt4mq   Failed to set ipsets: failed to apply for pod microservices/product-service-b475b645d-mt4mq: unable to flush ip sets for pod product-service-b475b645d-mt4mq
+76s         Normal    Updated             podnetworkchaos/product-service-b475b645d-mt4mq   Successfully update ObservedGeneration and FailedMessage of resource
+76s         Warning   Failed              podnetworkchaos/product-service-b475b645d-mt4mq   Failed to set ipsets: failed to apply for pod microservices/product-service-b475b645d-mt4mq: unable to flush ip sets for pod product-service-b475b645d-mt4mq
+76s         Normal    Updated             podnetworkchaos/product-service-b475b645d-mt4mq   Successfully update ObservedGeneration and FailedMessage of resource
+76s         Normal    Updated             podnetworkchaos/user-service-5844679d59-rc2xm     Successfully update ObservedGeneration and FailedMessage of resource
+76s         Warning   Failed              podnetworkchaos/product-service-b475b645d-mt4mq   Failed to set ipsets: failed to apply for pod microservices/product-service-b475b645d-mt4mq: unable to flush ip sets for pod product-service-b475b645d-mt4mq
+76s         Normal    Updated             podnetworkchaos/user-service-5844679d59-lm968     Successfully update ObservedGeneration and FailedMessage of resource
+76s         Warning   Failed              podnetworkchaos/user-service-5844679d59-lm968     Failed to set ipsets: failed to apply for pod microservices/user-service-5844679d59-lm968: unable to flush ip sets for pod user-service-5844679d59-lm968
+76s         Normal    Updated             podnetworkchaos/user-service-5844679d59-lm968     Successfully update ObservedGeneration and FailedMessage of resource
+75s         Normal    Updated             podnetworkchaos/product-service-b475b645d-kt8rs   Successfully update ObservedGeneration and FailedMessage of resource
+75s         Normal    Updated             podnetworkchaos/user-service-5844679d59-rc2xm     Successfully update ObservedGeneration and FailedMessage of resource
+75s         Warning   Failed              podnetworkchaos/api-gateway-7dc9d69f5c-rj5xz      Failed to set ipsets: failed to apply for pod microservices/api-gateway-7dc9d69f5c-rj5xz: unable to flush ip sets for pod api-gateway-7dc9d69f5c-rj5xz
+75s         Normal    Updated             podnetworkchaos/api-gateway-7dc9d69f5c-rj5xz      Successfully update ObservedGeneration and FailedMessage of resource
+75s         Warning   Failed              podnetworkchaos/api-gateway-7dc9d69f5c-rj5xz      Failed to set ipsets: failed to apply for pod microservices/api-gateway-7dc9d69f5c-rj5xz: unable to flush ip sets for pod api-gateway-7dc9d69f5c-rj5xz
+75s         Normal    Updated             podnetworkchaos/api-gateway-7dc9d69f5c-rj5xz      Successfully update ObservedGeneration and FailedMessage of resource
+75s         Warning   Failed              podnetworkchaos/api-gateway-7dc9d69f5c-rj5xz      Failed to set ipsets: failed to apply for pod microservices/api-gateway-7dc9d69f5c-rj5xz: unable to flush ip sets for pod api-gateway-7dc9d69f5c-rj5xz
+75s         Normal    Updated             podnetworkchaos/api-gateway-7dc9d69f5c-rj5xz      Successfully update ObservedGeneration and FailedMessage of resource
+75s         Warning   Failed              podnetworkchaos/api-gateway-7dc9d69f5c-rj5xz      Failed to set ipsets: failed to apply for pod microservices/api-gateway-7dc9d69f5c-rj5xz: unable to flush ip sets for pod api-gateway-7dc9d69f5c-rj5xz
+75s         Normal    Updated             podnetworkchaos/api-gateway-7dc9d69f5c-rj5xz      Successfully update ObservedGeneration and FailedMessage of resource
+75s         Warning   Failed              podnetworkchaos/api-gateway-7dc9d69f5c-rj5xz      Failed to set ipsets: failed to apply for pod microservices/api-gateway-7dc9d69f5c-rj5xz: unable to flush ip sets for pod api-gateway-7dc9d69f5c-rj5xz
+75s         Normal    Updated             podnetworkchaos/api-gateway-7dc9d69f5c-rj5xz      Successfully update ObservedGeneration and FailedMessage of resource
+75s         Normal    Updated             podnetworkchaos/user-service-5844679d59-rc2xm     Successfully update ObservedGeneration and FailedMessage of resource
+75s         Warning   Failed              podnetworkchaos/product-service-b475b645d-kt8rs   Failed to set ipsets: failed to apply for pod microservices/product-service-b475b645d-kt8rs: unable to flush ip sets for pod product-service-b475b645d-kt8rs
+75s         Normal    Updated             podnetworkchaos/product-service-b475b645d-kt8rs   Successfully update ObservedGeneration and FailedMessage of resource
+75s         Warning   Failed              podnetworkchaos/product-service-b475b645d-kt8rs   Failed to set ipsets: failed to apply for pod microservices/product-service-b475b645d-kt8rs: unable to flush ip sets for pod product-service-b475b645d-kt8rs
+75s         Normal    Updated             podnetworkchaos/product-service-b475b645d-kt8rs   Successfully update ObservedGeneration and FailedMessage of resource
+75s         Warning   Failed              podnetworkchaos/product-service-b475b645d-kt8rs   Failed to set ipsets: failed to apply for pod microservices/product-service-b475b645d-kt8rs: unable to flush ip sets for pod product-service-b475b645d-kt8rs
+75s         Normal    Updated             podnetworkchaos/product-service-b475b645d-kt8rs   Successfully update ObservedGeneration and FailedMessage of resource
+75s         Warning   Failed              podnetworkchaos/product-service-b475b645d-kt8rs   Failed to set ipsets: failed to apply for pod microservices/product-service-b475b645d-kt8rs: unable to flush ip sets for pod product-service-b475b645d-kt8rs
+75s         Warning   Failed              podnetworkchaos/product-service-b475b645d-mt4mq   Failed to set ipsets: failed to apply for pod microservices/product-service-b475b645d-mt4mq: unable to flush ip sets for pod product-service-b475b645d-mt4mq
+75s         Normal    Updated             podnetworkchaos/product-service-b475b645d-mt4mq   Successfully update ObservedGeneration and FailedMessage of resource
+75s         Warning   Failed              podnetworkchaos/product-service-b475b645d-mt4mq   Failed to set ipsets: failed to apply for pod microservices/product-service-b475b645d-mt4mq: unable to flush ip sets for pod product-service-b475b645d-mt4mq
+75s         Normal    Updated             podnetworkchaos/product-service-b475b645d-mt4mq   Successfully update ObservedGeneration and FailedMessage of resource
+75s         Warning   Failed              podnetworkchaos/product-service-b475b645d-mt4mq   Failed to set ipsets: failed to apply for pod microservices/product-service-b475b645d-mt4mq: unable to flush ip sets for pod product-service-b475b645d-mt4mq
+75s         Normal    Updated             podnetworkchaos/product-service-b475b645d-mt4mq   Successfully update ObservedGeneration and FailedMessage of resource
+75s         Warning   Failed              podnetworkchaos/product-service-b475b645d-mt4mq   Failed to set ipsets: failed to apply for pod microservices/product-service-b475b645d-mt4mq: unable to flush ip sets for pod product-service-b475b645d-mt4mq
+75s         Normal    Updated             podnetworkchaos/product-service-b475b645d-mt4mq   Successfully update ObservedGeneration and FailedMessage of resource
+75s         Warning   Failed              podnetworkchaos/user-service-5844679d59-rc2xm     Failed to set ipsets: failed to apply for pod microservices/user-service-5844679d59-rc2xm: unable to flush ip sets for pod user-service-5844679d59-rc2xm
+75s         Warning   Failed              podnetworkchaos/user-service-5844679d59-rc2xm     Failed to set ipsets: failed to apply for pod microservices/user-service-5844679d59-rc2xm: unable to flush ip sets for pod user-service-5844679d59-rc2xm
+75s         Normal    Updated             podnetworkchaos/user-service-5844679d59-rc2xm     Successfully update ObservedGeneration and FailedMessage of resource
+75s         Warning   Failed              podnetworkchaos/user-service-5844679d59-rc2xm     Failed to set ipsets: failed to apply for pod microservices/user-service-5844679d59-rc2xm: unable to flush ip sets for pod user-service-5844679d59-rc2xm
+75s         Normal    Updated             podnetworkchaos/user-service-5844679d59-rc2xm     Successfully update ObservedGeneration and FailedMessage of resource
+75s         Warning   Failed              podnetworkchaos/user-service-5844679d59-rc2xm     Failed to set ipsets: failed to apply for pod microservices/user-service-5844679d59-rc2xm: unable to flush ip sets for pod user-service-5844679d59-rc2xm
+75s         Normal    Updated             podnetworkchaos/user-service-5844679d59-rc2xm     Successfully update ObservedGeneration and FailedMessage of resource
+75s         Warning   Failed              podnetworkchaos/user-service-5844679d59-rc2xm     Failed to set ipsets: failed to apply for pod microservices/user-service-5844679d59-rc2xm: unable to flush ip sets for pod user-service-5844679d59-rc2xm
+75s         Warning   Failed              podnetworkchaos/api-gateway-7dc9d69f5c-t8dqz      Failed to set ipsets: failed to apply for pod microservices/api-gateway-7dc9d69f5c-t8dqz: unable to flush ip sets for pod api-gateway-7dc9d69f5c-t8dqz
+75s         Normal    Updated             podnetworkchaos/api-gateway-7dc9d69f5c-t8dqz      Successfully update ObservedGeneration and FailedMessage of resource
+75s         Warning   Failed              podnetworkchaos/api-gateway-7dc9d69f5c-t8dqz      Failed to set ipsets: failed to apply for pod microservices/api-gateway-7dc9d69f5c-t8dqz: unable to flush ip sets for pod api-gateway-7dc9d69f5c-t8dqz
+75s         Normal    Updated             podnetworkchaos/api-gateway-7dc9d69f5c-t8dqz      Successfully update ObservedGeneration and FailedMessage of resource
+75s         Normal    Updated             podnetworkchaos/product-service-b475b645d-kt8rs   Successfully update ObservedGeneration and FailedMessage of resource
+75s         Warning   Failed              podnetworkchaos/product-service-b475b645d-kt8rs   Failed to set ipsets: failed to apply for pod microservices/product-service-b475b645d-kt8rs: unable to flush ip sets for pod product-service-b475b645d-kt8rs
+75s         Warning   Failed              podnetworkchaos/api-gateway-7dc9d69f5c-t8dqz      Failed to set ipsets: failed to apply for pod microservices/api-gateway-7dc9d69f5c-t8dqz: unable to flush ip sets for pod api-gateway-7dc9d69f5c-t8dqz
+75s         Normal    Updated             podnetworkchaos/api-gateway-7dc9d69f5c-t8dqz      Successfully update ObservedGeneration and FailedMessage of resource
+75s         Warning   Failed              podnetworkchaos/api-gateway-7dc9d69f5c-t8dqz      Failed to set ipsets: failed to apply for pod microservices/api-gateway-7dc9d69f5c-t8dqz: unable to flush ip sets for pod api-gateway-7dc9d69f5c-t8dqz
+75s         Normal    Updated             podnetworkchaos/user-service-5844679d59-lm968     Successfully update ObservedGeneration and FailedMessage of resource
+75s         Warning   Failed              podnetworkchaos/user-service-5844679d59-lm968     Failed to set ipsets: failed to apply for pod microservices/user-service-5844679d59-lm968: unable to flush ip sets for pod user-service-5844679d59-lm968
+75s         Normal    Updated             podnetworkchaos/user-service-5844679d59-lm968     Successfully update ObservedGeneration and FailedMessage of resource
+75s         Warning   Failed              podnetworkchaos/user-service-5844679d59-lm968     Failed to set ipsets: failed to apply for pod microservices/user-service-5844679d59-lm968: unable to flush ip sets for pod user-service-5844679d59-lm968
+75s         Normal    Updated             podnetworkchaos/user-service-5844679d59-lm968     Successfully update ObservedGeneration and FailedMessage of resource
+75s         Warning   Failed              podnetworkchaos/user-service-5844679d59-lm968     Failed to set ipsets: failed to apply for pod microservices/user-service-5844679d59-lm968: unable to flush ip sets for pod user-service-5844679d59-lm968
+75s         Normal    Updated             podnetworkchaos/user-service-5844679d59-lm968     Successfully update ObservedGeneration and FailedMessage of resource
+75s         Warning   Failed              podnetworkchaos/user-service-5844679d59-lm968     Failed to set ipsets: failed to apply for pod microservices/user-service-5844679d59-lm968: unable to flush ip sets for pod user-service-5844679d59-lm968
+75s         Normal    Updated             podnetworkchaos/api-gateway-7dc9d69f5c-t8dqz      Successfully update ObservedGeneration and FailedMessage of resource
+75s         Normal    Updated             podnetworkchaos/api-gateway-7dc9d69f5c-t8dqz      Successfully update ObservedGeneration and FailedMessage of resource
+75s         Warning   Failed              podnetworkchaos/api-gateway-7dc9d69f5c-t8dqz      Failed to set ipsets: failed to apply for pod microservices/api-gateway-7dc9d69f5c-t8dqz: unable to flush ip sets for pod api-gateway-7dc9d69f5c-t8dqz
+74s         Normal    Updated             podnetworkchaos/user-service-5844679d59-rc2xm     Successfully update ObservedGeneration and FailedMessage of resource
+74s         Normal    Updated             podnetworkchaos/product-service-b475b645d-kt8rs   Successfully update ObservedGeneration and FailedMessage of resource
+74s         Warning   Failed              podnetworkchaos/api-gateway-7dc9d69f5c-rj5xz      Failed to set ipsets: failed to apply for pod microservices/api-gateway-7dc9d69f5c-rj5xz: unable to flush ip sets for pod api-gateway-7dc9d69f5c-rj5xz
+74s         Normal    Updated             podnetworkchaos/api-gateway-7dc9d69f5c-rj5xz      Successfully update ObservedGeneration and FailedMessage of resource
+74s         Normal    Updated             podnetworkchaos/product-service-b475b645d-mt4mq   Successfully update ObservedGeneration and FailedMessage of resource
+74s         Warning   Failed              podnetworkchaos/product-service-b475b645d-mt4mq   Failed to set ipsets: failed to apply for pod microservices/product-service-b475b645d-mt4mq: unable to flush ip sets for pod product-service-b475b645d-mt4mq
+74s         Warning   Failed              podnetworkchaos/product-service-b475b645d-kt8rs   Failed to set ipsets: failed to apply for pod microservices/product-service-b475b645d-kt8rs: unable to flush ip sets for pod product-service-b475b645d-kt8rs
+74s         Warning   Failed              podnetworkchaos/user-service-5844679d59-rc2xm     Failed to set ipsets: failed to apply for pod microservices/user-service-5844679d59-rc2xm: unable to flush ip sets for pod user-service-5844679d59-rc2xm
+74s         Warning   Failed              podnetworkchaos/api-gateway-7dc9d69f5c-t8dqz      Failed to set ipsets: failed to apply for pod microservices/api-gateway-7dc9d69f5c-t8dqz: unable to flush ip sets for pod api-gateway-7dc9d69f5c-t8dqz
+74s         Warning   Failed              podnetworkchaos/user-service-5844679d59-lm968     Failed to set ipsets: failed to apply for pod microservices/user-service-5844679d59-lm968: unable to flush ip sets for pod user-service-5844679d59-lm968
+74s         Normal    Updated             podnetworkchaos/user-service-5844679d59-lm968     Successfully update ObservedGeneration and FailedMessage of resource
+74s         Normal    Updated             podnetworkchaos/api-gateway-7dc9d69f5c-t8dqz      Successfully update ObservedGeneration and FailedMessage of resource
+73s         Normal    Updated             podnetworkchaos/api-gateway-7dc9d69f5c-t8dqz      Successfully update ObservedGeneration and FailedMessage of resource
+73s         Normal    Updated             podnetworkchaos/product-service-b475b645d-kt8rs   Successfully update ObservedGeneration and FailedMessage of resource
+73s         Normal    Updated             podnetworkchaos/product-service-b475b645d-mt4mq   Successfully update ObservedGeneration and FailedMessage of resource
+73s         Normal    Updated             podnetworkchaos/user-service-5844679d59-lm968     Successfully update ObservedGeneration and FailedMessage of resource
+73s         Warning   Failed              podnetworkchaos/api-gateway-7dc9d69f5c-t8dqz      Failed to set ipsets: failed to apply for pod microservices/api-gateway-7dc9d69f5c-t8dqz: unable to flush ip sets for pod api-gateway-7dc9d69f5c-t8dqz
+73s         Warning   Failed              podnetworkchaos/api-gateway-7dc9d69f5c-rj5xz      Failed to set ipsets: failed to apply for pod microservices/api-gateway-7dc9d69f5c-rj5xz: unable to flush ip sets for pod api-gateway-7dc9d69f5c-rj5xz
+73s         Warning   Failed              podnetworkchaos/user-service-5844679d59-lm968     Failed to set ipsets: failed to apply for pod microservices/user-service-5844679d59-lm968: unable to flush ip sets for pod user-service-5844679d59-lm968
+73s         Normal    Updated             podnetworkchaos/api-gateway-7dc9d69f5c-rj5xz      Successfully update ObservedGeneration and FailedMessage of resource
+73s         Warning   Failed              podnetworkchaos/product-service-b475b645d-mt4mq   Failed to set ipsets: failed to apply for pod microservices/product-service-b475b645d-mt4mq: unable to flush ip sets for pod product-service-b475b645d-mt4mq
+73s         Warning   Failed              podnetworkchaos/user-service-5844679d59-rc2xm     Failed to set ipsets: failed to apply for pod microservices/user-service-5844679d59-rc2xm: unable to flush ip sets for pod user-service-5844679d59-rc2xm
+73s         Warning   Failed              podnetworkchaos/product-service-b475b645d-kt8rs   Failed to set ipsets: failed to apply for pod microservices/product-service-b475b645d-kt8rs: unable to flush ip sets for pod product-service-b475b645d-kt8rs
+73s         Normal    Updated             podnetworkchaos/user-service-5844679d59-rc2xm     Successfully update ObservedGeneration and FailedMessage of resource
+70s         Warning   Failed              podnetworkchaos/user-service-5844679d59-rc2xm     Failed to set ipsets: failed to apply for pod microservices/user-service-5844679d59-rc2xm: unable to flush ip sets for pod user-service-5844679d59-rc2xm
+70s         Normal    Updated             podnetworkchaos/user-service-5844679d59-rc2xm     Successfully update ObservedGeneration and FailedMessage of resource
+70s         Normal    Updated             podnetworkchaos/api-gateway-7dc9d69f5c-rj5xz      Successfully update ObservedGeneration and FailedMessage of resource
+70s         Warning   Failed              podnetworkchaos/api-gateway-7dc9d69f5c-rj5xz      Failed to set ipsets: failed to apply for pod microservices/api-gateway-7dc9d69f5c-rj5xz: unable to flush ip sets for pod api-gateway-7dc9d69f5c-rj5xz
+70s         Warning   Failed              podnetworkchaos/user-service-5844679d59-lm968     Failed to set ipsets: failed to apply for pod microservices/user-service-5844679d59-lm968: unable to flush ip sets for pod user-service-5844679d59-lm968
+70s         Warning   Failed              podnetworkchaos/product-service-b475b645d-kt8rs   Failed to set ipsets: failed to apply for pod microservices/product-service-b475b645d-kt8rs: unable to flush ip sets for pod product-service-b475b645d-kt8rs
+70s         Normal    Updated             podnetworkchaos/api-gateway-7dc9d69f5c-t8dqz      Successfully update ObservedGeneration and FailedMessage of resource
+70s         Normal    Updated             podnetworkchaos/product-service-b475b645d-kt8rs   Successfully update ObservedGeneration and FailedMessage of resource
+70s         Warning   Failed              podnetworkchaos/api-gateway-7dc9d69f5c-t8dqz      Failed to set ipsets: failed to apply for pod microservices/api-gateway-7dc9d69f5c-t8dqz: unable to flush ip sets for pod api-gateway-7dc9d69f5c-t8dqz
+70s         Normal    Updated             podnetworkchaos/product-service-b475b645d-mt4mq   Successfully update ObservedGeneration and FailedMessage of resource
+70s         Warning   Failed              podnetworkchaos/product-service-b475b645d-mt4mq   Failed to set ipsets: failed to apply for pod microservices/product-service-b475b645d-mt4mq: unable to flush ip sets for pod product-service-b475b645d-mt4mq
+70s         Normal    Updated             podnetworkchaos/user-service-5844679d59-lm968     Successfully update ObservedGeneration and FailedMessage of resource
+65s         Warning   Failed              podnetworkchaos/api-gateway-7dc9d69f5c-rj5xz      Failed to set ipsets: failed to apply for pod microservices/api-gateway-7dc9d69f5c-rj5xz: unable to flush ip sets for pod api-gateway-7dc9d69f5c-rj5xz
+65s         Normal    Updated             podnetworkchaos/user-service-5844679d59-rc2xm     Successfully update ObservedGeneration and FailedMessage of resource
+65s         Normal    Updated             podnetworkchaos/product-service-b475b645d-mt4mq   Successfully update ObservedGeneration and FailedMessage of resource
+65s         Warning   Failed              podnetworkchaos/product-service-b475b645d-kt8rs   Failed to set ipsets: failed to apply for pod microservices/product-service-b475b645d-kt8rs: unable to flush ip sets for pod product-service-b475b645d-kt8rs
+65s         Normal    Updated             podnetworkchaos/product-service-b475b645d-kt8rs   Successfully update ObservedGeneration and FailedMessage of resource
+65s         Warning   Failed              podnetworkchaos/api-gateway-7dc9d69f5c-t8dqz      Failed to set ipsets: failed to apply for pod microservices/api-gateway-7dc9d69f5c-t8dqz: unable to flush ip sets for pod api-gateway-7dc9d69f5c-t8dqz
+65s         Normal    Updated             podnetworkchaos/api-gateway-7dc9d69f5c-t8dqz      Successfully update ObservedGeneration and FailedMessage of resource
+65s         Warning   Failed              podnetworkchaos/user-service-5844679d59-lm968     Failed to set ipsets: failed to apply for pod microservices/user-service-5844679d59-lm968: unable to flush ip sets for pod user-service-5844679d59-lm968
+65s         Normal    Updated             podnetworkchaos/user-service-5844679d59-lm968     Successfully update ObservedGeneration and FailedMessage of resource
+65s         Normal    Updated             podnetworkchaos/api-gateway-7dc9d69f5c-rj5xz      Successfully update ObservedGeneration and FailedMessage of resource
+65s         Warning   Failed              podnetworkchaos/product-service-b475b645d-mt4mq   Failed to set ipsets: failed to apply for pod microservices/product-service-b475b645d-mt4mq: unable to flush ip sets for pod product-service-b475b645d-mt4mq
+65s         Warning   Failed              podnetworkchaos/user-service-5844679d59-rc2xm     Failed to set ipsets: failed to apply for pod microservices/user-service-5844679d59-rc2xm: unable to flush ip sets for pod user-service-5844679d59-rc2xm
+55s         Warning   Failed              podnetworkchaos/api-gateway-7dc9d69f5c-rj5xz      Failed to set ipsets: failed to apply for pod microservices/api-gateway-7dc9d69f5c-rj5xz: unable to flush ip sets for pod api-gateway-7dc9d69f5c-rj5xz
+55s         Warning   Failed              podnetworkchaos/product-service-b475b645d-mt4mq   Failed to set ipsets: failed to apply for pod microservices/product-service-b475b645d-mt4mq: unable to flush ip sets for pod product-service-b475b645d-mt4mq
+55s         Normal    Updated             podnetworkchaos/user-service-5844679d59-rc2xm     Successfully update ObservedGeneration and FailedMessage of resource
+55s         Normal    Updated             podnetworkchaos/api-gateway-7dc9d69f5c-rj5xz      Successfully update ObservedGeneration and FailedMessage of resource
+55s         Warning   Failed              podnetworkchaos/product-service-b475b645d-kt8rs   Failed to set ipsets: failed to apply for pod microservices/product-service-b475b645d-kt8rs: unable to flush ip sets for pod product-service-b475b645d-kt8rs
+55s         Normal    Updated             podnetworkchaos/product-service-b475b645d-kt8rs   Successfully update ObservedGeneration and FailedMessage of resource
+55s         Warning   Failed              podnetworkchaos/user-service-5844679d59-rc2xm     Failed to set ipsets: failed to apply for pod microservices/user-service-5844679d59-rc2xm: unable to flush ip sets for pod user-service-5844679d59-rc2xm
+55s         Warning   Failed              podnetworkchaos/api-gateway-7dc9d69f5c-t8dqz      Failed to set ipsets: failed to apply for pod microservices/api-gateway-7dc9d69f5c-t8dqz: unable to flush ip sets for pod api-gateway-7dc9d69f5c-t8dqz
+55s         Normal    Updated             podnetworkchaos/api-gateway-7dc9d69f5c-t8dqz      Successfully update ObservedGeneration and FailedMessage of resource
+55s         Normal    Updated             podnetworkchaos/product-service-b475b645d-mt4mq   Successfully update ObservedGeneration and FailedMessage of resource
+55s         Warning   Failed              podnetworkchaos/user-service-5844679d59-lm968     Failed to set ipsets: failed to apply for pod microservices/user-service-5844679d59-lm968: unable to flush ip sets for pod user-service-5844679d59-lm968
+55s         Normal    Updated             podnetworkchaos/user-service-5844679d59-lm968     Successfully update ObservedGeneration and FailedMessage of resource
+32s         Warning   Failed              podnetworkchaos/user-service-5844679d59-lm968     Failed to set ipsets: failed to apply for pod microservices/user-service-5844679d59-lm968: unable to flush ip sets for pod user-service-5844679d59-lm968
+31s         Warning   Failed              podnetworkchaos/product-service-b475b645d-mt4mq   Failed to set ipsets: failed to apply for pod microservices/product-service-b475b645d-mt4mq: unable to flush ip sets for pod product-service-b475b645d-mt4mq
+31s         Normal    Updated             podnetworkchaos/user-service-5844679d59-lm968     Successfully update ObservedGeneration and FailedMessage of resource
+31s         Warning   Failed              podnetworkchaos/api-gateway-7dc9d69f5c-t8dqz      Failed to set ipsets: failed to apply for pod microservices/api-gateway-7dc9d69f5c-t8dqz: unable to flush ip sets for pod api-gateway-7dc9d69f5c-t8dqz
+31s         Normal    Updated             podnetworkchaos/product-service-b475b645d-mt4mq   Successfully update ObservedGeneration and FailedMessage of resource
+31s         Normal    Updated             podnetworkchaos/api-gateway-7dc9d69f5c-rj5xz      Successfully update ObservedGeneration and FailedMessage of resource
+31s         Normal    Updated             podnetworkchaos/product-service-b475b645d-kt8rs   Successfully update ObservedGeneration and FailedMessage of resource
+31s         Warning   Failed              podnetworkchaos/product-service-b475b645d-kt8rs   Failed to set ipsets: failed to apply for pod microservices/product-service-b475b645d-kt8rs: unable to flush ip sets for pod product-service-b475b645d-kt8rs
+31s         Normal    Updated             podnetworkchaos/api-gateway-7dc9d69f5c-t8dqz      Successfully update ObservedGeneration and FailedMessage of resource
+31s         Normal    Updated             podnetworkchaos/user-service-5844679d59-rc2xm     Successfully update ObservedGeneration and FailedMessage of resource
+31s         Warning   Failed              podnetworkchaos/api-gateway-7dc9d69f5c-rj5xz      Failed to set ipsets: failed to apply for pod microservices/api-gateway-7dc9d69f5c-rj5xz: unable to flush ip sets for pod api-gateway-7dc9d69f5c-rj5xz
+31s         Warning   Failed              podnetworkchaos/user-service-5844679d59-rc2xm     Failed to set ipsets: failed to apply for pod microservices/user-service-5844679d59-rc2xm: unable to flush ip sets for pod user-service-5844679d59-rc2xm

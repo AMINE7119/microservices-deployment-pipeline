@@ -1,0 +1,151 @@
+apiVersion: monitoring.coreos.com/v1
+kind: PrometheusRule
+metadata:
+  name: chaos-engineering-alerts
+  namespace: monitoring
+spec:
+  groups:
+  - name: chaos-engineering
+    rules:
+    - alert: ChaosExperimentRunning
+      expr: chaos_experiment_status == 1
+      for: 0m
+      labels:
+        severity: info
+        category: chaos-engineering
+      annotations:
+        summary: "Chaos experiment {{ $labels.experiment }} is running"
+        description: "A chaos experiment is currently active in namespace {{ $labels.namespace }}"
+
+    - alert: ChaosExperimentFailed
+      expr: chaos_experiment_status == 2
+      for: 1m
+      labels:
+        severity: warning
+        category: chaos-engineering
+      annotations:
+        summary: "Chaos experiment {{ $labels.experiment }} failed"
+        description: "Chaos experiment {{ $labels.experiment }} in namespace {{ $labels.namespace }} has failed"
+
+    - alert: HighErrorRateDuringChaos
+      expr: sum(rate(http_requests_total{namespace="microservices",status=~"5.."}[5m])) / sum(rate(http_requests_total{namespace="microservices"}[5m])) * 100 > 10
+      for: 2m
+      labels:
+        severity: critical
+        category: chaos-engineering
+      annotations:
+        summary: "High error rate during chaos experiment"
+        description: "Error rate is {{ $value }}% which is above the 10% threshold during chaos experiments"
+
+    - alert: SlowRecoveryAfterChaos
+      expr: increase(kube_pod_container_status_restarts_total{namespace="microservices"}[10m]) > 5
+      for: 5m
+      labels:
+        severity: warning
+        category: chaos-engineering
+      annotations:
+        summary: "Slow recovery detected after chaos experiment"
+        description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} has restarted {{ $value }} times in the last 10 minutes"
+
+    - alert: ServiceDownDuringChaos
+      expr: up{namespace="microservices"} == 0
+      for: 1m
+      labels:
+        severity: critical
+        category: chaos-engineering
+      annotations:
+        summary: "Service {{ $labels.job }} is down during chaos experiment"
+        description: "Service {{ $labels.job }} in namespace {{ $labels.namespace }} is not responding"
+
+    - alert: MemoryUsageSpikeDuringChaos
+      expr: (container_memory_usage_bytes{namespace="microservices"} / container_spec_memory_limit_bytes{namespace="microservices"}) * 100 > 90
+      for: 2m
+      labels:
+        severity: warning
+        category: chaos-engineering
+      annotations:
+        summary: "High memory usage during chaos experiment"
+        description: "Container {{ $labels.container }} in pod {{ $labels.pod }} is using {{ $value }}% of its memory limit"
+
+    - alert: CPUThrottlingDuringChaos
+      expr: rate(container_cpu_cfs_throttled_seconds_total{namespace="microservices"}[5m]) > 0.1
+      for: 3m
+      labels:
+        severity: warning
+        category: chaos-engineering
+      annotations:
+        summary: "CPU throttling detected during chaos experiment"
+        description: "Container {{ $labels.container }} in pod {{ $labels.pod }} is being CPU throttled at rate {{ $value }}/sec"
+
+    - alert: NetworkLatencyDuringChaos
+      expr: histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{namespace="microservices"}[5m])) by (le)) > 2
+      for: 5m
+      labels:
+        severity: warning
+        category: chaos-engineering
+      annotations:
+        summary: "High network latency during chaos experiment"
+        description: "99th percentile response time is {{ $value }}s which is above the 2s threshold"
+
+    - alert: PodCrashLoopBackOffDuringChaos
+      expr: kube_pod_container_status_waiting_reason{namespace="microservices",reason="CrashLoopBackOff"} == 1
+      for: 2m
+      labels:
+        severity: critical
+        category: chaos-engineering
+      annotations:
+        summary: "Pod in CrashLoopBackOff during chaos experiment"
+        description: "Pod {{ $labels.pod }} in namespace {{ $labels.namespace }} is in CrashLoopBackOff state"
+
+    - alert: DisasterRecoveryTriggered
+      expr: disaster_recovery_status == 1
+      for: 0m
+      labels:
+        severity: critical
+        category: disaster-recovery
+      annotations:
+        summary: "Disaster recovery procedure has been triggered"
+        description: "Automated disaster recovery is active for {{ $labels.region }}"
+
+    - alert: BackupJobFailed
+      expr: kube_job_status_failed{namespace="velero"} == 1
+      for: 1m
+      labels:
+        severity: critical
+        category: disaster-recovery
+      annotations:
+        summary: "Backup job {{ $labels.job_name }} failed"
+        description: "Backup job {{ $labels.job_name }} in namespace {{ $labels.namespace }} has failed"
+
+    - alert: RestoreJobFailed
+      expr: kube_job_status_failed{namespace="velero",job_name=~".*restore.*"} == 1
+      for: 1m
+      labels:
+        severity: critical
+        category: disaster-recovery
+      annotations:
+        summary: "Restore job {{ $labels.job_name }} failed"
+        description: "Restore job {{ $labels.job_name }} in namespace {{ $labels.namespace }} has failed"
+
+  - name: resilience-metrics
+    rules:
+    - record: chaos:error_rate_5m
+      expr: sum(rate(http_requests_total{namespace="microservices",status=~"5.."}[5m])) / sum(rate(http_requests_total{namespace="microservices"}[5m]))
+
+    - record: chaos:response_time_p99_5m
+      expr: histogram_quantile(0.99, sum(rate(http_request_duration_seconds_bucket{namespace="microservices"}[5m])) by (le))
+
+    - record: chaos:pod_restart_rate_5m
+      expr: sum(rate(kube_pod_container_status_restarts_total{namespace="microservices"}[5m])) by (pod)
+
+    - record: chaos:memory_utilization_5m
+      expr: sum(container_memory_usage_bytes{namespace="microservices"}) by (pod) / sum(container_spec_memory_limit_bytes{namespace="microservices"}) by (pod)
+
+    - record: chaos:cpu_utilization_5m
+      expr: sum(rate(container_cpu_usage_seconds_total{namespace="microservices"}[5m])) by (pod)
+
+    - record: chaos:availability_5m
+      expr: up{namespace="microservices"}
+
+    - record: chaos:recovery_time
+      expr: time() - on() group_right() (kube_pod_created{namespace="microservices"} > bool (time() - 300))

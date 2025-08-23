@@ -1,0 +1,7 @@
+NAME                              READY   STATUS    RESTARTS        AGE     IP            NODE                          NOMINATED NODE   READINESS GATES
+api-gateway-7dc9d69f5c-rj5xz      1/1     Running   1 (7m36s ago)   7m45s   10.244.0.24   microservices-control-plane   <none>           <none>
+api-gateway-7dc9d69f5c-t8dqz      1/1     Running   1 (7m36s ago)   7m45s   10.244.0.23   microservices-control-plane   <none>           <none>
+product-service-b475b645d-kt8rs   1/1     Running   0               7m45s   10.244.0.28   microservices-control-plane   <none>           <none>
+product-service-b475b645d-mt4mq   1/1     Running   0               7m45s   10.244.0.27   microservices-control-plane   <none>           <none>
+user-service-5844679d59-lm968     1/1     Running   0               7m45s   10.244.0.26   microservices-control-plane   <none>           <none>
+user-service-5844679d59-rc2xm     1/1     Running   0               7m45s   10.244.0.25   microservices-control-plane   <none>           <none>

@@ -1,0 +1,85 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: HTTPChaos
+metadata:
+  name: http-delay-experiment
+  namespace: chaos-mesh
+spec:
+  mode: all
+  selector:
+    namespaces:
+      - microservices
+    labelSelectors:
+      "app": "api-gateway"
+  target: Request
+  port: 8080
+  method: GET
+  path: "/api/*"
+  delay: "3s"
+  duration: "5m"
+---
+apiVersion: chaos-mesh.org/v1alpha1
+kind: HTTPChaos
+metadata:
+  name: http-abort-experiment
+  namespace: chaos-mesh
+spec:
+  mode: random-max-percent
+  value: "30"
+  selector:
+    namespaces:
+      - microservices
+    labelSelectors:
+      "app": "api-gateway"
+  target: Request
+  port: 8080
+  method: POST
+  path: "/api/orders"
+  abort: true
+  duration: "3m"
+---
+apiVersion: chaos-mesh.org/v1alpha1
+kind: HTTPChaos
+metadata:
+  name: http-response-override-experiment
+  namespace: chaos-mesh
+spec:
+  mode: all
+  selector:
+    namespaces:
+      - microservices
+    labelSelectors:
+      "app": "user-service"
+  target: Response
+  port: 8000
+  method: GET
+  path: "/users/*"
+  replace:
+    code: 500
+    body: "{\"error\": \"Internal Server Error - Chaos Experiment\"}"
+    headers:
+      Content-Type: ["application/json"]
+      X-Chaos-Experiment: ["active"]
+  duration: "2m"
+---
+apiVersion: chaos-mesh.org/v1alpha1
+kind: HTTPChaos
+metadata:
+  name: http-patch-experiment
+  namespace: chaos-mesh
+spec:
+  mode: all
+  selector:
+    namespaces:
+      - microservices
+    labelSelectors:
+      "app": "product-service"
+  target: Request
+  port: 8081
+  path: "/products/*"
+  patch:
+    headers:
+      - ["add", "X-Chaos-Test", "true"]
+      - ["replace", "User-Agent", "Chaos-Agent/1.0"]
+    queries:
+      - ["add", "chaos_test", "true"]
+  duration: "5m"

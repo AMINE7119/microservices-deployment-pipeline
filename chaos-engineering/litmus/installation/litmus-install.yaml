@@ -1,0 +1,238 @@
+# Litmus Chaos Installation
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: litmus
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: litmus
+  namespace: litmus
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: litmus
+rules:
+- apiGroups: [""]
+  resources: ["pods", "pods/log", "pods/exec", "services", "endpoints", "events", "configmaps", "secrets", "persistentvolumeclaims"]
+  verbs: ["*"]
+- apiGroups: ["apps"]
+  resources: ["deployments", "daemonsets", "replicasets", "statefulsets"]
+  verbs: ["*"]
+- apiGroups: ["batch"]
+  resources: ["jobs", "cronjobs"]
+  verbs: ["*"]
+- apiGroups: ["litmuschaos.io"]
+  resources: ["*"]
+  verbs: ["*"]
+- apiGroups: ["chaos-mesh.org"]
+  resources: ["*"]
+  verbs: ["*"]
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRoleBinding
+metadata:
+  name: litmus
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: litmus
+subjects:
+- kind: ServiceAccount
+  name: litmus
+  namespace: litmus
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: litmus-portal-server
+  namespace: litmus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: litmus-portal-server
+  template:
+    metadata:
+      labels:
+        app: litmus-portal-server
+    spec:
+      serviceAccountName: litmus
+      containers:
+      - name: portal-server
+        image: litmuschaos/litmus-portal-server:3.0.0
+        env:
+        - name: DB_SERVER
+          value: "mongodb://litmus-mongodb:27017"
+        - name: JWT_SECRET
+          valueFrom:
+            secretKeyRef:
+              name: litmus-portal-secret
+              key: jwt-secret
+        - name: PORTAL_ENDPOINT
+          value: "http://litmus-portal-server:9002"
+        - name: SELF_AGENT
+          value: "true"
+        - name: SUBSCRIBER_IMAGE
+          value: "litmuschaos/litmus-portal-subscriber:3.0.0"
+        - name: EVENT_TRACKER_IMAGE
+          value: "litmuschaos/litmus-portal-event-tracker:3.0.0"
+        - name: ARGO_WORKFLOW_CONTROLLER_IMAGE
+          value: "litmuschaos/workflow-controller:v3.3.1"
+        - name: ARGO_WORKFLOW_EXECUTOR_IMAGE
+          value: "litmuschaos/argoexec:v3.3.1"
+        - name: LITMUS_CHAOS_OPERATOR_IMAGE
+          value: "litmuschaos/chaos-operator:3.0.0"
+        - name: LITMUS_CHAOS_RUNNER_IMAGE
+          value: "litmuschaos/chaos-runner:3.0.0"
+        - name: LITMUS_CHAOS_EXPORTER_IMAGE
+          value: "litmuschaos/chaos-exporter:3.0.0"
+        ports:
+        - containerPort: 9002
+        - containerPort: 8080
+        resources:
+          limits:
+            memory: "2Gi"
+            cpu: "1"
+          requests:
+            memory: "1Gi"
+            cpu: "500m"
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: litmus-portal-frontend
+  namespace: litmus
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: litmus-portal-frontend
+  template:
+    metadata:
+      labels:
+        app: litmus-portal-frontend
+    spec:
+      containers:
+      - name: frontend
+        image: litmuschaos/litmus-portal-frontend:3.0.0
+        env:
+        - name: REACT_APP_KB_CHAOS_VERSION
+          value: "3.0.0"
+        - name: REACT_APP_BUILD_TIME
+          value: "$(date -u +"%Y-%m-%dT%H:%M:%SZ")"
+        - name: REACT_APP_HUB_BRANCH_NAME
+          value: "v3.0.x"
+        ports:
+        - containerPort: 8185
+        resources:
+          limits:
+            memory: "512Mi"
+            cpu: "250m"
+          requests:
+            memory: "256Mi"
+            cpu: "125m"
+---
+apiVersion: apps/v1
+kind: StatefulSet
+metadata:
+  name: litmus-mongodb
+  namespace: litmus
+spec:
+  serviceName: litmus-mongodb
+  replicas: 1
+  selector:
+    matchLabels:
+      app: litmus-mongodb
+  template:
+    metadata:
+      labels:
+        app: litmus-mongodb
+    spec:
+      containers:
+      - name: mongodb
+        image: mongo:5.0
+        env:
+        - name: MONGO_INITDB_ROOT_USERNAME
+          value: "admin"
+        - name: MONGO_INITDB_ROOT_PASSWORD
+          valueFrom:
+            secretKeyRef:
+              name: litmus-portal-secret
+              key: mongo-password
+        - name: MONGO_INITDB_DATABASE
+          value: "litmus"
+        ports:
+        - containerPort: 27017
+        volumeMounts:
+        - name: mongo-data
+          mountPath: /data/db
+        resources:
+          limits:
+            memory: "1Gi"
+            cpu: "500m"
+          requests:
+            memory: "512Mi"
+            cpu: "250m"
+  volumeClaimTemplates:
+  - metadata:
+      name: mongo-data
+    spec:
+      accessModes: ["ReadWriteOnce"]
+      resources:
+        requests:
+          storage: 20Gi
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: litmus-portal-server
+  namespace: litmus
+spec:
+  selector:
+    app: litmus-portal-server
+  ports:
+  - name: graphql
+    port: 9002
+    targetPort: 9002
+  - name: rest
+    port: 8080
+    targetPort: 8080
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: litmus-portal-frontend
+  namespace: litmus
+spec:
+  type: LoadBalancer
+  selector:
+    app: litmus-portal-frontend
+  ports:
+  - port: 9091
+    targetPort: 8185
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: litmus-mongodb
+  namespace: litmus
+spec:
+  clusterIP: None
+  selector:
+    app: litmus-mongodb
+  ports:
+  - port: 27017
+    targetPort: 27017
+---
+apiVersion: v1
+kind: Secret
+metadata:
+  name: litmus-portal-secret
+  namespace: litmus
+type: Opaque
+stringData:
+  jwt-secret: "litmus-portal-jwt-secret-change-this-in-production"
+  mongo-password: "litmus-mongo-password-change-this"
