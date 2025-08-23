@@ -1,0 +1,14 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: deployment-pod-failure
+  namespace: chaos-mesh
+spec:
+  action: pod-failure
+  mode: all
+  duration: "30s"
+  selector:
+    namespaces:
+      - microservices
+    labelSelectors:
+      "app": "api-gateway"

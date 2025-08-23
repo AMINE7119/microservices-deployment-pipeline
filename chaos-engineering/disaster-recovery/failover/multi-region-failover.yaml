@@ -1,0 +1,198 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: failover-config
+  namespace: chaos-mesh
+data:
+  regions: |
+    primary:
+      cloud: aws
+      region: us-east-1
+      endpoint: https://eks-us-east-1.amazonaws.com
+      priority: 1
+    secondary:
+      cloud: gcp
+      region: us-central1
+      endpoint: https://gke-us-central1.googleapis.com
+      priority: 2
+    tertiary:
+      cloud: aws
+      region: eu-west-1
+      endpoint: https://eks-eu-west-1.amazonaws.com
+      priority: 3
+---
+apiVersion: batch/v1
+kind: CronJob
+metadata:
+  name: health-check-regions
+  namespace: chaos-mesh
+spec:
+  schedule: "*/1 * * * *"  # Every minute
+  jobTemplate:
+    spec:
+      template:
+        spec:
+          serviceAccountName: chaos-mesh
+          containers:
+          - name: health-checker
+            image: curlimages/curl:latest
+            command:
+            - /bin/sh
+            - -c
+            - |
+              # Check primary region
+              PRIMARY_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://eks-us-east-1.amazonaws.com/health)
+              if [ "$PRIMARY_STATUS" != "200" ]; then
+                echo "Primary region unhealthy, initiating failover..."
+                kubectl apply -f /config/failover-to-secondary.yaml
+              fi
+              
+              # Check secondary region
+              SECONDARY_STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://gke-us-central1.googleapis.com/health)
+              if [ "$SECONDARY_STATUS" != "200" ] && [ "$PRIMARY_STATUS" != "200" ]; then
+                echo "Secondary region unhealthy, failing over to tertiary..."
+                kubectl apply -f /config/failover-to-tertiary.yaml
+              fi
+            volumeMounts:
+            - name: config
+              mountPath: /config
+          volumes:
+          - name: config
+            configMap:
+              name: failover-config
+          restartPolicy: OnFailure
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: global-load-balancer
+  namespace: microservices
+  annotations:
+    service.beta.kubernetes.io/aws-load-balancer-type: "nlb"
+    service.beta.kubernetes.io/aws-load-balancer-cross-zone-load-balancing-enabled: "true"
+spec:
+  type: LoadBalancer
+  selector:
+    app: api-gateway
+  ports:
+  - port: 80
+    targetPort: 8080
+    protocol: TCP
+---
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: multi-region-ingress
+  namespace: microservices
+  annotations:
+    kubernetes.io/ingress.class: nginx
+    nginx.ingress.kubernetes.io/backend-protocol: "HTTP"
+    nginx.ingress.kubernetes.io/upstream-fail-timeout: "10"
+    nginx.ingress.kubernetes.io/upstream-max-fails: "3"
+spec:
+  rules:
+  - host: api.microservices.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: api-gateway
+            port:
+              number: 8080
+  - host: api-backup.microservices.com
+    http:
+      paths:
+      - path: /
+        pathType: Prefix
+        backend:
+          service:
+            name: api-gateway-secondary
+            port:
+              number: 8080
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: failover-scripts
+  namespace: chaos-mesh
+data:
+  failover-to-secondary.yaml: |
+    apiVersion: v1
+    kind: Service
+    metadata:
+      name: api-gateway
+      namespace: microservices
+    spec:
+      selector:
+        app: api-gateway
+        region: us-central1
+      ports:
+      - port: 8080
+        targetPort: 8080
+  
+  failover-to-tertiary.yaml: |
+    apiVersion: v1
+    kind: Service
+    metadata:
+      name: api-gateway
+      namespace: microservices
+    spec:
+      selector:
+        app: api-gateway
+        region: eu-west-1
+      ports:
+      - port: 8080
+        targetPort: 8080
+---
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: failover-controller
+  namespace: chaos-mesh
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: failover-controller
+  template:
+    metadata:
+      labels:
+        app: failover-controller
+    spec:
+      serviceAccountName: chaos-mesh
+      containers:
+      - name: controller
+        image: bitnami/kubectl:latest
+        command: ["/bin/sh"]
+        args:
+        - -c
+        - |
+          while true; do
+            # Monitor health endpoints
+            PRIMARY_HEALTH=$(kubectl get endpoints api-gateway -n microservices -o json | jq '.subsets[0].addresses | length')
+            
+            if [ "$PRIMARY_HEALTH" -eq 0 ]; then
+              echo "No healthy endpoints in primary region, initiating failover..."
+              
+              # Update DNS records (simulated)
+              kubectl annotate service api-gateway -n microservices \
+                failover.chaos-mesh.io/status="failed-over" \
+                failover.chaos-mesh.io/timestamp="$(date -u +"%Y-%m-%dT%H:%M:%SZ")" \
+                --overwrite
+              
+              # Switch traffic to secondary region
+              kubectl patch service api-gateway -n microservices \
+                -p '{"spec":{"selector":{"region":"us-central1"}}}'
+              
+              # Send notification
+              echo "Failover completed to secondary region"
+            fi
+            
+            sleep 30
+          done
+        resources:
+          limits:
+            memory: "128Mi"
+            cpu: "100m"

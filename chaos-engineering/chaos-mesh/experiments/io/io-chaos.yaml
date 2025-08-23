@@ -1,0 +1,82 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: IOChaos
+metadata:
+  name: io-delay-experiment
+  namespace: chaos-mesh
+spec:
+  action: latency
+  mode: all
+  selector:
+    namespaces:
+      - microservices
+    labelSelectors:
+      "app": "product-service"
+  volumePath: /data
+  path: "/data/*"
+  delay: "100ms"
+  percent: 50
+  duration: "5m"
+---
+apiVersion: chaos-mesh.org/v1alpha1
+kind: IOChaos
+metadata:
+  name: io-fault-experiment
+  namespace: chaos-mesh
+spec:
+  action: fault
+  mode: random-max-percent
+  value: "30"
+  selector:
+    namespaces:
+      - microservices
+    labelSelectors:
+      "app": "order-service"
+  volumePath: /data
+  path: "/data/orders/*"
+  errno: 5  # EIO (I/O error)
+  percent: 100
+  duration: "2m"
+---
+apiVersion: chaos-mesh.org/v1alpha1
+kind: IOChaos
+metadata:
+  name: io-attroverride-experiment
+  namespace: chaos-mesh
+spec:
+  action: attrOverride
+  mode: all
+  selector:
+    namespaces:
+      - microservices
+    labelSelectors:
+      "app": "user-service"
+  volumePath: /data
+  path: "/data/users/*"
+  attr:
+    perm: 0
+    uid: 0
+    gid: 0
+  percent: 100
+  duration: "1m"
+---
+apiVersion: chaos-mesh.org/v1alpha1
+kind: IOChaos
+metadata:
+  name: io-mistake-experiment
+  namespace: chaos-mesh
+spec:
+  action: mistake
+  mode: all
+  selector:
+    namespaces:
+      - microservices
+    labelSelectors:
+      "app": "api-gateway"
+  volumePath: /var/log
+  path: "/var/log/*.log"
+  mistake:
+    filling: "zero"
+    maxOccurrences: 10
+    maxLength: 100
+  percent: 50
+  duration: "3m"

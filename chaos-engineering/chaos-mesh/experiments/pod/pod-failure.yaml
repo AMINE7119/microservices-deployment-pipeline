@@ -1,0 +1,52 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: pod-failure-experiment
+  namespace: chaos-mesh
+spec:
+  action: pod-failure
+  mode: random-max-percent
+  value: "50"
+  duration: "30s"
+  selector:
+    namespaces:
+      - microservices
+    labelSelectors:
+      "app": "api-gateway"
+  scheduler:
+    cron: "@every 5m"
+---
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: pod-kill-experiment
+  namespace: chaos-mesh
+spec:
+  action: pod-kill
+  mode: fixed
+  value: "1"
+  gracePeriod: 0
+  selector:
+    namespaces:
+      - microservices
+    labelSelectors:
+      "app": "user-service"
+  scheduler:
+    cron: "@every 10m"
+---
+apiVersion: chaos-mesh.org/v1alpha1
+kind: PodChaos
+metadata:
+  name: container-kill-experiment
+  namespace: chaos-mesh
+spec:
+  action: container-kill
+  mode: all
+  containerNames:
+    - "product-service"
+  selector:
+    namespaces:
+      - microservices
+    labelSelectors:
+      "app": "product-service"
+  duration: "60s"

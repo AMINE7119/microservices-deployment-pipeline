@@ -1,0 +1,79 @@
+apiVersion: chaos-mesh.org/v1alpha1
+kind: StressChaos
+metadata:
+  name: cpu-stress-experiment
+  namespace: chaos-mesh
+spec:
+  mode: random-max-percent
+  value: "50"
+  selector:
+    namespaces:
+      - microservices
+    labelSelectors:
+      "app": "api-gateway"
+  stressors:
+    cpu:
+      workers: 2
+      load: 80
+  duration: "5m"
+  scheduler:
+    cron: "@every 20m"
+---
+apiVersion: chaos-mesh.org/v1alpha1
+kind: StressChaos
+metadata:
+  name: memory-stress-experiment
+  namespace: chaos-mesh
+spec:
+  mode: all
+  selector:
+    namespaces:
+      - microservices
+    labelSelectors:
+      "app": "user-service"
+  stressors:
+    memory:
+      workers: 2
+      size: "256MB"
+  duration: "3m"
+---
+apiVersion: chaos-mesh.org/v1alpha1
+kind: StressChaos
+metadata:
+  name: combined-stress-experiment
+  namespace: chaos-mesh
+spec:
+  mode: fixed
+  value: "1"
+  selector:
+    namespaces:
+      - microservices
+    labelSelectors:
+      "app": "product-service"
+  stressors:
+    cpu:
+      workers: 1
+      load: 50
+    memory:
+      workers: 1
+      size: "128MB"
+  duration: "2m"
+---
+apiVersion: chaos-mesh.org/v1alpha1
+kind: StressChaos
+metadata:
+  name: io-stress-experiment
+  namespace: chaos-mesh
+spec:
+  mode: all
+  selector:
+    namespaces:
+      - microservices
+    labelSelectors:
+      "app": "order-service"
+  stressors:
+    io:
+      workers: 1
+      size: "100MB"
+      path: "/tmp"
+  duration: "3m"

@@ -1,0 +1,145 @@
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: microservices-network-loss
+  namespace: litmus
+spec:
+  appinfo:
+    appns: microservices
+    applabel: "app=api-gateway"
+    appkind: deployment
+  engineState: "active"
+  chaosServiceAccount: litmus
+  experiments:
+    - name: pod-network-loss
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "120"
+            - name: NETWORK_INTERFACE
+              value: "eth0"
+            - name: NETWORK_PACKET_LOSS_PERCENTAGE
+              value: "30"
+            - name: CONTAINER_RUNTIME
+              value: "containerd"
+            - name: SOCKET_PATH
+              value: "/run/containerd/containerd.sock"
+            - name: PODS_AFFECTED_PERC
+              value: "100"
+        probe:
+          - name: check-packet-loss-impact
+            type: httpProbe
+            httpProbe/inputs:
+              url: http://api-gateway.microservices:8080/health
+              insecureSkipVerify: false
+              method:
+                get:
+                  criteria: ==
+                  responseCode: "200"
+            mode: Continuous
+            runProperties:
+              probeTimeout: 10
+              interval: 15
+              retry: 5
+---
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: microservices-network-latency
+  namespace: litmus
+spec:
+  appinfo:
+    appns: microservices
+    applabel: "app=user-service"
+    appkind: deployment
+  engineState: "active"
+  chaosServiceAccount: litmus
+  experiments:
+    - name: pod-network-latency
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "90"
+            - name: NETWORK_INTERFACE
+              value: "eth0"
+            - name: NETWORK_LATENCY
+              value: "2000"
+            - name: JITTER
+              value: "100"
+            - name: CONTAINER_RUNTIME
+              value: "containerd"
+            - name: SOCKET_PATH
+              value: "/run/containerd/containerd.sock"
+            - name: PODS_AFFECTED_PERC
+              value: "50"
+---
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: microservices-network-corruption
+  namespace: litmus
+spec:
+  appinfo:
+    appns: microservices
+    applabel: "app=product-service"
+    appkind: deployment
+  engineState: "active"
+  chaosServiceAccount: litmus
+  experiments:
+    - name: pod-network-corruption
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "60"
+            - name: NETWORK_INTERFACE
+              value: "eth0"
+            - name: NETWORK_PACKET_CORRUPTION_PERCENTAGE
+              value: "20"
+            - name: CONTAINER_RUNTIME
+              value: "containerd"
+            - name: SOCKET_PATH
+              value: "/run/containerd/containerd.sock"
+---
+apiVersion: litmuschaos.io/v1alpha1
+kind: ChaosEngine
+metadata:
+  name: microservices-network-duplication
+  namespace: litmus
+spec:
+  appinfo:
+    appns: microservices
+    applabel: "app=order-service"
+    appkind: deployment
+  engineState: "active"
+  chaosServiceAccount: litmus
+  experiments:
+    - name: pod-network-duplication
+      spec:
+        components:
+          env:
+            - name: TOTAL_CHAOS_DURATION
+              value: "90"
+            - name: NETWORK_INTERFACE
+              value: "eth0"
+            - name: NETWORK_PACKET_DUPLICATION_PERCENTAGE
+              value: "15"
+            - name: CONTAINER_RUNTIME
+              value: "containerd"
+            - name: SOCKET_PATH
+              value: "/run/containerd/containerd.sock"
+        probe:
+          - name: check-duplicate-handling
+            type: promProbe
+            promProbe/inputs:
+              endpoint: http://prometheus.monitoring:9090
+              query: "rate(order_service_duplicate_requests_total[5m])"
+              comparator:
+                type: "<"
+                value: "10"
+            mode: Edge
+            runProperties:
+              probeTimeout: 5
+              interval: 10
