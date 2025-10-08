@@ -143,14 +143,14 @@ jobs:
       
       # Upload results
       - name: Upload Trivy results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: 'trivy-${{ matrix.service }}.sarif'
           category: 'trivy-${{ matrix.service }}'
       
       - name: Upload Grype results to GitHub Security
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: 'grype-${{ matrix.service }}.sarif'
@@ -180,16 +180,16 @@ jobs:
       
       # CodeQL scan
       - name: Initialize CodeQL
-        uses: github/codeql-action/init@v3
+        uses: github/codeql-action/init@v4
         with:
           languages: javascript,python,go
           queries: security-and-quality
       
       - name: Autobuild
-        uses: github/codeql-action/autobuild@v3
+        uses: github/codeql-action/autobuild@v4
       
       - name: Perform CodeQL Analysis
-        uses: github/codeql-action/analyze@v3
+        uses: github/codeql-action/analyze@v4
       
       # Bandit for Python
       - name: Run Bandit Security Scan
@@ -211,7 +211,7 @@ jobs:
       
       # Upload all SAST results
       - name: Upload SAST results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: |
@@ -293,7 +293,7 @@ jobs:
       
       # Upload IaC results
       - name: Upload Checkov results
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         if: always()
         with:
           sarif_file: checkov.sarif
