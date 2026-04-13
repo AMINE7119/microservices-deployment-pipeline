@@ -311,6 +311,7 @@ microservices-deployment-pipeline/
 | Taux d'échec des déploiements | < 1% |
 | Couverture de tests | > 90% |
 | Disponibilité | 99.99% |
+| Disponibilité | 99.99% |
 
 ---
 
