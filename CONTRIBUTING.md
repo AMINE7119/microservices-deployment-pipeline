@@ -2,7 +2,7 @@
 
 Thank you for your interest in contributing to this project! This guide will help you understand how to contribute effectively to this microservices deployment pipeline portfolio project.
 
-## 🎯 Project Goals
+## Project Goals
 
 This is primarily a **portfolio project** designed to demonstrate enterprise-grade DevOps and cloud engineering skills. Contributions should align with these goals:
 
@@ -11,38 +11,38 @@ This is primarily a **portfolio project** designed to demonstrate enterprise-gra
 - **Best Practices**: Demonstrate professional development standards
 - **Portfolio Impact**: Showcase skills valuable to employers
 
-## 🛠️ How to Contribute
+## ️ How to Contribute
 
 ### Types of Contributions Welcome
 
-1. **🐛 Bug Fixes**
-   - Fix broken functionality
-   - Improve error handling
-   - Resolve security vulnerabilities
+1. ** Bug Fixes**
+ - Fix broken functionality
+ - Improve error handling
+ - Resolve security vulnerabilities
 
-2. **📚 Documentation Improvements**
-   - Fix typos and clarify instructions
-   - Add missing documentation
-   - Improve code comments
-   - Create tutorials or examples
+2. ** Documentation Improvements**
+ - Fix typos and clarify instructions
+ - Add missing documentation
+ - Improve code comments
+ - Create tutorials or examples
 
-3. **🔧 Infrastructure Enhancements**
-   - Optimize Docker configurations
-   - Improve Kubernetes manifests
-   - Enhance CI/CD pipelines
-   - Add monitoring capabilities
+3. ** Infrastructure Enhancements**
+ - Optimize Docker configurations
+ - Improve Kubernetes manifests
+ - Enhance CI/CD pipelines
+ - Add monitoring capabilities
 
-4. **🚀 Feature Additions**
-   - Implement additional microservices
-   - Add new deployment strategies
-   - Integrate additional tools
-   - Improve observability
+4. ** Feature Additions**
+ - Implement additional microservices
+ - Add new deployment strategies
+ - Integrate additional tools
+ - Improve observability
 
-5. **🧪 Testing Improvements**
-   - Add unit tests
-   - Create integration tests
-   - Develop performance tests
-   - Improve test coverage
+5. ** Testing Improvements**
+ - Add unit tests
+ - Create integration tests
+ - Develop performance tests
+ - Improve test coverage
 
 ### What We DON'T Accept
 
@@ -52,7 +52,7 @@ This is primarily a **portfolio project** designed to demonstrate enterprise-gra
 - Non-production-ready implementations
 - Code without proper testing
 
-## 🚀 Getting Started
+## Getting Started
 
 ### 1. Fork and Clone
 ```bash
@@ -84,7 +84,7 @@ git checkout -b feature/your-feature-name
 git checkout -b fix/bug-description
 ```
 
-## 📝 Development Process
+## Development Process
 
 ### 1. Before You Start
 - **Check existing issues** to avoid duplicate work
@@ -194,13 +194,13 @@ make validate
 
 #### Manual Testing Checklist
 - [ ] **Local Docker Compose**: `make deploy-local`
-- [ ] **Local Kubernetes**: `make deploy-k8s-local`  
+- [ ] **Local Kubernetes**: `make deploy-k8s-local` 
 - [ ] **Health Checks**: `make health-check`
 - [ ] **Service Communication**: Test API endpoints
 - [ ] **UI Functionality**: Test frontend features
 - [ ] **Error Scenarios**: Test failure cases
 
-## 📋 Pull Request Process
+## Pull Request Process
 
 ### 1. Pre-Submission Checklist
 - [ ] **All tests pass locally**
@@ -219,12 +219,12 @@ Use this template for your PR description:
 Brief description of what this PR does and why.
 
 ## Type of Change
-- [ ] 🐛 Bug fix (non-breaking change that fixes an issue)
-- [ ] ✨ New feature (non-breaking change that adds functionality)
-- [ ] 💥 Breaking change (fix or feature that causes existing functionality to change)
-- [ ] 📚 Documentation update
-- [ ] 🔧 Infrastructure/DevOps improvement
-- [ ] 🧪 Test improvements
+- [ ] Bug fix (non-breaking change that fixes an issue)
+- [ ] New feature (non-breaking change that adds functionality)
+- [ ] Breaking change (fix or feature that causes existing functionality to change)
+- [ ] Documentation update
+- [ ] Infrastructure/DevOps improvement
+- [ ] Test improvements
 
 ## Testing
 - [ ] Unit tests pass
@@ -252,7 +252,7 @@ Brief description of what this PR does and why.
 3. **Feedback Loop**: Address any feedback or requested changes
 4. **Approval**: Once approved, your PR will be merged
 
-## 🔍 Code Review Guidelines
+## Code Review Guidelines
 
 ### For Contributors
 - **Respond promptly** to feedback
@@ -268,7 +268,7 @@ Brief description of what this PR does and why.
 - **Focus on code quality** and project goals
 - **Provide examples** when suggesting improvements
 
-## 🏷️ Issue and PR Labels
+## ️ Issue and PR Labels
 
 ### Priority Labels
 - `priority-critical`: Security vulnerabilities, system down
@@ -292,7 +292,7 @@ Brief description of what this PR does and why.
 - `blocked`: Waiting on something else
 - `work-in-progress`: Currently being worked on
 
-## 🎓 Learning Resources
+## Learning Resources
 
 If you're new to any of the technologies used in this project:
 
@@ -313,7 +313,7 @@ If you're new to any of the technologies used in this project:
 - [GCP Documentation](https://cloud.google.com/docs)
 - [Terraform Documentation](https://www.terraform.io/docs)
 
-## 💬 Communication
+## Communication
 
 ### Getting Help
 - **GitHub Issues**: For bugs, features, and general discussion
@@ -327,7 +327,7 @@ If you're new to any of the technologies used in this project:
 - **Share knowledge** and experiences
 - **Collaborate constructively**
 
-## 🎉 Recognition
+## Recognition
 
 Contributors will be recognized in the following ways:
 
@@ -336,7 +336,7 @@ Contributors will be recognized in the following ways:
 - **LinkedIn recommendations**: For significant contributions (upon request)
 - **Portfolio references**: Permission to list contribution in your own portfolio
 
-## 🚀 Advanced Contribution Opportunities
+## Advanced Contribution Opportunities
 
 ### Become a Maintainer
 Active contributors may be invited to become maintainers with additional responsibilities:
@@ -357,7 +357,7 @@ Active contributors may be invited to become maintainers with additional respons
 - Integrate new monitoring tools
 - Create companion projects
 
-## 📞 Questions?
+## Questions?
 
 If you have questions about contributing:
 
@@ -366,7 +366,7 @@ If you have questions about contributing:
 3. **Open a new issue** with the `question` label
 4. **Join GitHub Discussions** for broader conversations
 
-Thank you for contributing to making this project a valuable learning resource for the DevOps community! 🎉
+Thank you for contributing to making this project a valuable learning resource for the DevOps community! 
 
 ---
 

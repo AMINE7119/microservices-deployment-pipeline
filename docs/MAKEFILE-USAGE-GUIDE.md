@@ -2,18 +2,18 @@
 
 This comprehensive guide provides step-by-step instructions for using the Makefile throughout all 8 phases of the microservices deployment pipeline project.
 
-## 🚀 Quick Reference
+## Quick Reference
 
 ```bash
-make help        # Show all available commands
-make examples    # Show usage examples
-make env         # Check environment setup
-make version     # Show project information
+make help # Show all available commands
+make examples # Show usage examples
+make env # Check environment setup
+make version # Show project information
 ```
 
 ---
 
-## 📋 Phase-by-Phase Makefile Usage
+## Phase-by-Phase Makefile Usage
 
 ### Phase 0: Initial Project Setup
 
@@ -34,10 +34,10 @@ make check-deps
 # - Creates local Kubernetes cluster
 make init-project
 
-# Expected output: ✅ Project initialization complete!
+# Expected output: Project initialization complete!
 ```
 
-**🔍 What happens during init-project:**
+** What happens during init-project:**
 1. `install-deps`: Installs dependencies for all 5 microservices
 2. `setup-tools`: Installs kubectl, Helm, Kind, ArgoCD CLI
 3. `setup-local-k8s`: Creates Kind cluster with ingress controller
@@ -53,7 +53,7 @@ make env
 
 ---
 
-## 🏗️ Phase 1: Foundation Development
+## ️ Phase 1: Foundation Development
 
 ### Step 1: Development Environment
 ```bash
@@ -83,9 +83,9 @@ make build SERVICE=order-service
 make test
 
 # Run specific test types
-make test-unit           # Unit tests for all services
-make test-integration    # Integration tests
-make test-security       # Security scans
+make test-unit # Unit tests for all services
+make test-integration # Integration tests
+make test-security # Security scans
 ```
 
 ### Step 4: Local Deployment Verification
@@ -94,8 +94,8 @@ make test-security       # Security scans
 make health-check
 
 # View service logs
-make logs                      # All services
-make logs SERVICE=frontend     # Specific service
+make logs # All services
+make logs SERVICE=frontend # Specific service
 
 # Check service status
 make pipeline-status
@@ -106,12 +106,12 @@ make pipeline-status
 # Run Phase 1 validation
 make validate
 
-# Expected output: ✅ Phase 1 validation passed
+# Expected output: Phase 1 validation passed
 ```
 
 ---
 
-## 🔒 Phase 2: Security Implementation
+## Phase 2: Security Implementation
 
 ### Step 1: Security Scanning
 ```bash
@@ -146,12 +146,12 @@ make push-images
 # Run validation for Phase 2
 make validate
 
-# Expected output: ✅ Phase 2 security validation passed
+# Expected output: Phase 2 security validation passed
 ```
 
 ---
 
-## ☸️ Phase 3: Kubernetes & GitOps
+## ️ Phase 3: Kubernetes & GitOps
 
 ### Step 1: Kubernetes Deployment
 ```bash
@@ -188,8 +188,8 @@ make setup-gitops
 ### Step 4: Kubernetes Operations
 ```bash
 # View Kubernetes logs
-make logs-k8s                    # All services
-make logs-k8s SERVICE=frontend   # Specific service
+make logs-k8s # All services
+make logs-k8s SERVICE=frontend # Specific service
 
 # Check Kubernetes status
 make pipeline-status
@@ -200,12 +200,12 @@ make pipeline-status
 # Validate Kubernetes deployment
 make validate
 
-# Expected output: ✅ Phase 3 Kubernetes validation passed
+# Expected output: Phase 3 Kubernetes validation passed
 ```
 
 ---
 
-## 🚢 Phase 4: Advanced Deployment Strategies
+## Phase 4: Advanced Deployment Strategies
 
 ### Step 1: Environment-Specific Deployments
 ```bash
@@ -249,7 +249,7 @@ kubectl rollout undo deployment/microservices -n microservices
 
 ---
 
-## 📊 Phase 5: Observability & Monitoring
+## Phase 5: Observability & Monitoring
 
 ### Step 1: Setup Monitoring Stack
 ```bash
@@ -273,8 +273,8 @@ make monitoring
 ### Step 3: Log Analysis
 ```bash
 # View aggregated logs
-make logs                    # Docker Compose logs
-make logs-k8s               # Kubernetes logs
+make logs # Docker Compose logs
+make logs-k8s # Kubernetes logs
 
 # Service-specific logs
 make logs SERVICE=api-gateway
@@ -283,7 +283,7 @@ make logs-k8s SERVICE=user-service
 
 ---
 
-## ⚡ Phase 6: Performance Optimization
+## Phase 6: Performance Optimization
 
 ### Step 1: Performance Testing
 ```bash
@@ -311,7 +311,7 @@ kubectl top pods --all-namespaces
 
 ---
 
-## 🧪 Phase 7: Chaos Engineering
+## Phase 7: Chaos Engineering
 
 ### Step 1: Chaos Testing
 ```bash
@@ -323,7 +323,7 @@ make chaos-test
 
 ---
 
-## ☁️ Phase 8: Multi-Cloud & Production
+## ️ Phase 8: Multi-Cloud & Production
 
 ### Step 1: Production Deployment Pipeline
 ```bash
@@ -349,7 +349,7 @@ make validate
 
 ---
 
-## 🛠️ Daily Development Workflow
+## ️ Daily Development Workflow
 
 ### Morning Setup
 ```bash
@@ -404,7 +404,7 @@ make deploy-prod
 
 ---
 
-## 🔧 Maintenance & Operations
+## Maintenance & Operations
 
 ### Regular Maintenance
 ```bash
@@ -472,7 +472,7 @@ make reset
 
 # This will:
 # 1. Clean up all Docker resources
-# 2. Clean up Kubernetes resources  
+# 2. Clean up Kubernetes resources 
 # 3. Delete Kind cluster
 # 4. Remove Docker images
 # 5. Re-initialize project
@@ -480,12 +480,12 @@ make reset
 
 ---
 
-## 🎯 Phase-Specific Validation Commands
+## Phase-Specific Validation Commands
 
 ### Validate Each Phase
 ```bash
 # Phase 1: Foundation
-make validate  # Runs phase1-validation.sh
+make validate # Runs phase1-validation.sh
 
 # Phase 2: Security
 make test-security && make validate
@@ -511,7 +511,7 @@ make run-pipeline && make validate
 
 ---
 
-## ⚡ Power User Commands
+## Power User Commands
 
 ### Advanced Operations
 ```bash
@@ -542,7 +542,7 @@ make validate && make health-check && make test-security
 
 ---
 
-## 📋 Command Reference Summary
+## Command Reference Summary
 
 | Phase | Key Commands | Purpose |
 |-------|-------------|---------|
@@ -558,19 +558,19 @@ make validate && make health-check && make test-security
 
 ---
 
-## 🎉 Success Indicators
+## Success Indicators
 
 After each phase, you should see these success indicators:
 
-- ✅ All tests passing
-- ✅ Services healthy and responding
-- ✅ No security vulnerabilities
-- ✅ Deployments successful
-- ✅ Monitoring active
-- ✅ Performance benchmarks met
+- All tests passing
+- Services healthy and responding
+- No security vulnerabilities
+- Deployments successful
+- Monitoring active
+- Performance benchmarks met
 
 **Remember**: Always run `make validate` after completing each phase to ensure everything is working correctly!
 
 ---
 
-**🚀 You now have the complete roadmap for using the Makefile throughout all 8 phases of your microservices deployment pipeline project. Each command is designed to guide you through professional-grade DevOps practices that will make your portfolio stand out!**
+** You now have the complete roadmap for using the Makefile throughout all 8 phases of your microservices deployment pipeline project. Each command is designed to guide you through professional-grade DevOps practices that will make your portfolio stand out!**

@@ -1,6 +1,6 @@
 # Troubleshooting Guide
 
-## 🚨 Quick Reference
+## Quick Reference
 
 ### Emergency Response Checklist
 ```bash
@@ -25,7 +25,7 @@ kubectl exec -it deploy/api-gateway -- wget -qO- http://user-service:8000/health
 kubectl exec -it deploy/api-gateway -- wget -qO- http://product-service:8080/health
 ```
 
-## 🔍 Phase-by-Phase Troubleshooting
+## Phase-by-Phase Troubleshooting
 
 ### Phase 1: Foundation Issues
 
@@ -36,7 +36,7 @@ ERROR: failed to solve: process "/bin/sh -c npm install" did not complete succes
 
 # Diagnosis
 docker build --no-cache services/frontend/
-docker system df  # Check disk space
+docker system df # Check disk space
 
 # Solutions
 # 1. Clean Docker system
@@ -90,14 +90,14 @@ npm test -- --watchAll=false
 # 2. Check environment differences
 # Add debugging to workflow:
 - name: Debug Environment
-  run: |
-    node --version
-    npm --version
-    ls -la
+ run: |
+ node --version
+ npm --version
+ ls -la
 
 # 3. Cache issues
 - name: Clear npm cache
-  run: npm cache clean --force
+ run: npm cache clean --force
 ```
 
 ### Phase 2: Security Issues
@@ -105,9 +105,9 @@ npm test -- --watchAll=false
 #### Problem: Security Scans Failing Pipeline
 ```bash
 # Symptoms
-✗ High severity vulnerabilities found
-✗ Secrets detected in code
-✗ Container scan failed
+ High severity vulnerabilities found
+ Secrets detected in code
+ Container scan failed
 
 # Diagnosis
 # Check specific security tool outputs
@@ -122,7 +122,7 @@ pip install --upgrade package-name
 
 # 2. Suppress false positives
 # .trivyignore
-CVE-2021-44228  # Not applicable - Go service
+CVE-2021-44228 # Not applicable - Go service
 
 # 3. Remove secrets
 git filter-branch --force --index-filter 'git rm --cached --ignore-unmatch config.env'
@@ -144,8 +144,8 @@ vault operator unseal <unseal-key>
 
 # 2. Create missing secrets
 kubectl create secret generic vault-token \
-  --from-literal=token=<vault-token> \
-  -n security
+ --from-literal=token=<vault-token> \
+ -n security
 
 # 3. Check service account permissions
 kubectl auth can-i get secrets --as=system:serviceaccount:security:vault-sa
@@ -156,8 +156,8 @@ kubectl auth can-i get secrets --as=system:serviceaccount:security:vault-sa
 #### Problem: Pods Stuck in Pending State
 ```bash
 # Symptoms
-NAME                          READY   STATUS    RESTARTS   AGE
-frontend-5d6b8c7f8d-xyz       0/1     Pending   0          5m
+NAME READY STATUS RESTARTS AGE
+frontend-5d6b8c7f8d-xyz 0/1 Pending 0 5m
 
 # Diagnosis
 kubectl describe pod frontend-5d6b8c7f8d-xyz
@@ -339,7 +339,7 @@ kubectl logs daemonset/jaeger-agent
 # Update application config to increase sampling rate
 ```
 
-## 🔧 Database Troubleshooting
+## Database Troubleshooting
 
 ### PostgreSQL Issues
 ```bash
@@ -381,7 +381,7 @@ kubectl exec -it statefulset/mongodb -- mongosh --eval "db.runCommand({serverSta
 kubectl exec -it statefulset/mongodb -- mongosh --eval "db.products.stats()"
 ```
 
-## 🌐 Network Troubleshooting
+## Network Troubleshooting
 
 ### DNS Resolution Issues
 ```bash
@@ -423,7 +423,7 @@ kubectl describe ingress microservices-ingress
 openssl s_client -connect microservices.example.com:443 -servername microservices.example.com
 ```
 
-## 📊 Performance Troubleshooting
+## Performance Troubleshooting
 
 ### High Memory Usage
 ```bash
@@ -465,7 +465,7 @@ kubectl get storageclass
 kubectl describe storageclass standard
 ```
 
-## 🔄 CI/CD Troubleshooting
+## CI/CD Troubleshooting
 
 ### GitHub Actions Issues
 ```bash
@@ -502,76 +502,76 @@ kubectl get rolebinding,clusterrolebinding | grep argocd
 kubectl auth can-i create pods --as=system:serviceaccount:argocd:argocd-server
 ```
 
-## 🚨 Incident Response Procedures
+## Incident Response Procedures
 
 ### Critical Service Down
 1. **Immediate Response (0-5 minutes)**
-   ```bash
-   # Check service status
-   kubectl get pods -l app=<service>
-   kubectl logs -l app=<service> --tail=50
-   
-   # Quick restart if needed
-   kubectl rollout restart deployment/<service>
-   ```
+ ```bash
+ # Check service status
+ kubectl get pods -l app=<service>
+ kubectl logs -l app=<service> --tail=50
+
+ # Quick restart if needed
+ kubectl rollout restart deployment/<service>
+ ```
 
 2. **Investigation (5-15 minutes)**
-   ```bash
-   # Check recent changes
-   kubectl rollout history deployment/<service>
-   argocd app history <app-name>
-   
-   # Check dependencies
-   kubectl exec -it deploy/<service> -- wget -qO- http://dependency-service/health
-   ```
+ ```bash
+ # Check recent changes
+ kubectl rollout history deployment/<service>
+ argocd app history <app-name>
+
+ # Check dependencies
+ kubectl exec -it deploy/<service> -- wget -qO- http://dependency-service/health
+ ```
 
 3. **Resolution (15-30 minutes)**
-   ```bash
-   # Rollback if needed
-   kubectl rollout undo deployment/<service>
-   argocd app rollback <app-name> <revision>
-   
-   # Scale up if performance issue
-   kubectl scale deployment <service> --replicas=5
-   ```
+ ```bash
+ # Rollback if needed
+ kubectl rollout undo deployment/<service>
+ argocd app rollback <app-name> <revision>
+
+ # Scale up if performance issue
+ kubectl scale deployment <service> --replicas=5
+ ```
 
 ### Database Issues
 1. **Check connectivity**
-   ```bash
-   kubectl exec -it deploy/api-gateway -- nc -zv postgres 5432
-   ```
+ ```bash
+ kubectl exec -it deploy/api-gateway -- nc -zv postgres 5432
+ ```
 
 2. **Check database health**
-   ```bash
-   kubectl exec -it statefulset/postgres -- psql -U postgres -c "SELECT 1"
-   ```
+ ```bash
+ kubectl exec -it statefulset/postgres -- psql -U postgres -c "SELECT 1"
+ ```
 
 3. **Backup and restore if needed**
-   ```bash
-   kubectl exec -it statefulset/postgres -- pg_dump -U postgres microservices > backup.sql
-   ```
+ ```bash
+ kubectl exec -it statefulset/postgres -- pg_dump -U postgres microservices > backup.sql
+ ```
 
 ### Security Incidents
 1. **Isolate affected services**
-   ```bash
-   kubectl scale deployment <compromised-service> --replicas=0
-   kubectl patch networkpolicy <policy> -p '{"spec":{"ingress":[]}}'
-   ```
+ ```bash
+ kubectl scale deployment <compromised-service> --replicas=0
+ kubectl patch networkpolicy <policy> -p '{"spec":{"ingress":[]}}'
+ ```
 
 2. **Collect evidence**
-   ```bash
-   kubectl logs <pod> --previous > incident-logs.txt
-   kubectl describe pod <pod> > pod-details.txt
-   ```
+ ```bash
+ kubectl logs <pod> --previous > incident-logs.txt
+ kubectl describe pod <pod> > pod-details.txt
+ ```
 
 3. **Rotate secrets**
-   ```bash
-   kubectl delete secret <secret-name>
-   kubectl create secret generic <secret-name> --from-literal=key=new-value
-   kubectl rollout restart deployment/<service>
-   ```
+ ```bash
+ kubectl delete secret <secret-name>
+ kubectl create secret generic <secret-name> --from-literal=key=new-value
+ kubectl rollout restart deployment/<service>
+ ```
 
-## 📋 Health Check Scripts
+## Health Check Scripts
 
 ### Overall System Health
 ```bash
@@ -585,8 +585,8 @@ kubectl get pods --all-namespaces | grep -v Running | grep -v Completed
 echo "=== Service Health ==="
 services=("frontend" "api-gateway" "user-service" "product-service" "order-service")
 for service in "${services[@]}"; do
-  status=$(kubectl exec -it deploy/$service -- wget -qO- --timeout=5 http://localhost/health 2>/dev/null | jq -r .status 2>/dev/null || echo "failed")
-  echo "$service: $status"
+ status=$(kubectl exec -it deploy/$service -- wget -qO- --timeout=5 http://localhost/health 2>/dev/null | jq -r .status 2>/dev/null || echo "failed")
+ echo "$service: $status"
 done
 
 echo "=== Database Health ==="
@@ -606,8 +606,8 @@ kubectl top pods -n microservices
 echo "=== Response Time Check ==="
 services=("http://localhost:3000" "http://localhost:8080/health")
 for url in "${services[@]}"; do
-  response_time=$(curl -w "%{time_total}" -s -o /dev/null "$url" 2>/dev/null || echo "failed")
-  echo "$url: ${response_time}s"
+ response_time=$(curl -w "%{time_total}" -s -o /dev/null "$url" 2>/dev/null || echo "failed")
+ echo "$url: ${response_time}s"
 done
 
 echo "=== Error Rate Check ==="
@@ -615,7 +615,7 @@ kubectl logs -l app=api-gateway --since=1h | grep ERROR | wc -l | xargs echo "AP
 kubectl logs -l app=user-service --since=1h | grep ERROR | wc -l | xargs echo "User Service errors in last hour:"
 ```
 
-## 📖 Debugging Best Practices
+## Debugging Best Practices
 
 ### 1. Systematic Approach
 - Start with the error message
@@ -665,16 +665,16 @@ Remember: The best debugging approach is prevention through good monitoring, log
 
 ### On-Call Procedures
 1. **Severity 1 (Critical)**: Service completely down
-   - Response time: 15 minutes
-   - Escalation: Team lead after 30 minutes
+ - Response time: 15 minutes
+ - Escalation: Team lead after 30 minutes
 
 2. **Severity 2 (High)**: Degraded performance
-   - Response time: 1 hour
-   - Escalation: Next business day
+ - Response time: 1 hour
+ - Escalation: Next business day
 
 3. **Severity 3 (Medium)**: Minor issues
-   - Response time: Next business day
-   - Escalation: Weekly review
+ - Response time: Next business day
+ - Escalation: Weekly review
 
 ### Communication Channels
 - **Slack**: #microservices-alerts
