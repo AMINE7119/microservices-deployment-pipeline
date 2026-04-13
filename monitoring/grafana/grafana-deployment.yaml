@@ -95,4 +95,4 @@ metadata:
   namespace: monitoring
 type: Opaque
 data:
-  admin-password: YWRtaW4xMjM=  # admin123 base64 encoded
+  admin-password: REPLACE_WITH_BASE64_ENCODED_ADMIN_PASSWORD

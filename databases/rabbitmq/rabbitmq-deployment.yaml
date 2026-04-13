@@ -112,9 +112,9 @@ metadata:
   namespace: microservices-dev
 type: Opaque
 data:
-  username: cmFiYml0dXNlcg==  # rabbituser
-  password: c2VjdXJlUmFiYml0UGFzc3dvcmQxMjM=  # secureRabbitPassword123
-  erlang-cookie: c2VjdXJlRXJsYW5nQ29va2llMTIz  # secureErlangCookie123
+  username: REPLACE_WITH_BASE64_ENCODED_USERNAME
+  password: REPLACE_WITH_BASE64_ENCODED_PASSWORD
+  erlang-cookie: REPLACE_WITH_BASE64_ENCODED_ERLANG_COOKIE
 ---
 apiVersion: v1
 kind: ConfigMap

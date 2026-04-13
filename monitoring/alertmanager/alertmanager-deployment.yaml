@@ -44,7 +44,7 @@ data:
         from: 'alertmanager@example.com'
         smarthost: 'smtp.example.com:587'
         auth_username: 'alertmanager@example.com'
-        auth_password: 'password'
+        auth_password: 'CHANGE_IN_PRODUCTION'
         headers:
           Subject: 'Critical Alert: {{ .GroupLabels.alertname }}'
     

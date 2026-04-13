@@ -117,8 +117,8 @@ metadata:
   namespace: microservices-dev
 type: Opaque
 data:
-  username: bW9uZ29hZG1pbg==  # mongoadmin
-  password: c2VjdXJlTW9uZ29QYXNzd29yZDEyMw==  # secureMongoPassword123
+  username: REPLACE_WITH_BASE64_ENCODED_USERNAME
+  password: REPLACE_WITH_BASE64_ENCODED_PASSWORD
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -167,7 +167,7 @@ data:
     // Create productservice user
     db.createUser({
       user: 'productservice',
-      pwd: 'productpass123',
+      pwd: 'CHANGE_IN_PRODUCTION',
       roles: [
         {
           role: 'readWrite',

@@ -228,7 +228,7 @@ spec:
                   number: 9090
 
 ---
-# Basic Auth Secret for Kubecost (base64 encoded admin:admin123)
+# Basic Auth Secret for Kubecost — replace data values with your own base64-encoded credentials
 apiVersion: v1
 kind: Secret
 metadata:

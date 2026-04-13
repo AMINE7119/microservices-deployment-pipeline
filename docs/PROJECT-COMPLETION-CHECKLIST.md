@@ -31,7 +31,6 @@
 - [x] **02-PHASE2-SECURITY.md** - DevSecOps implementation
 - [x] **03-PHASE3-KUBERNETES.md** - Kubernetes & GitOps deployment
 - [x] **04-PHASE4-DEPLOYMENT.md** - Advanced deployment strategies
-- [x] **CLAUDE.md** - AI assistant guidance file
 
 ### ✅ Architecture Documentation (COMPLETE)
 - [x] **architecture/SYSTEM-DESIGN.md** - Comprehensive system architecture

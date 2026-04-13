@@ -119,8 +119,8 @@ metadata:
   namespace: microservices-dev
 type: Opaque
 data:
-  username: cG9zdGdyZXM=  # postgres
-  password: c2VjdXJlUGFzc3dvcmQxMjM=  # securePassword123
+  username: REPLACE_WITH_BASE64_ENCODED_USERNAME
+  password: REPLACE_WITH_BASE64_ENCODED_PASSWORD
 ---
 apiVersion: v1
 kind: ConfigMap
@@ -162,8 +162,8 @@ data:
     CREATE DATABASE orderdb;
     
     -- Create users for each service
-    CREATE USER userservice WITH PASSWORD 'userpass123';
-    CREATE USER orderservice WITH PASSWORD 'orderpass123';
+    CREATE USER userservice WITH PASSWORD 'CHANGE_IN_PRODUCTION';
+    CREATE USER orderservice WITH PASSWORD 'CHANGE_IN_PRODUCTION';
     
     -- Grant permissions
     GRANT ALL PRIVILEGES ON DATABASE userdb TO userservice;

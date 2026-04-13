@@ -95,7 +95,7 @@ metadata:
   namespace: microservices-dev
 type: Opaque
 data:
-  password: c2VjdXJlUmVkaXNQYXNzd29yZDEyMw==  # secureRedisPassword123
+  password: REPLACE_WITH_BASE64_ENCODED_REDIS_PASSWORD
 ---
 apiVersion: v1
 kind: ConfigMap
